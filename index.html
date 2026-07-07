@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#245b35" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Ayushree Ayurvedic Hospital</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/logo.svg" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- App shell: on phones this fills the screen; on desktop it sits in a device frame -->
+  <div class="device">
+    <div class="app">
+
+      <!-- ===== Header ===== -->
+      <header class="app-header">
+        <div class="header-top">
+          <img class="logo" src="assets/logo.svg" alt="logo" />
+          <div class="header-titles">
+            <div class="clinic" id="clinicName">Ayushree Ayurvedic Hospital</div>
+            <div class="doctor" id="doctorLine">Doctor: Dr Krishna Chandran G</div>
+          </div>
+          <button id="menu-btn" class="icon-btn" aria-label="menu">☰</button>
+        </div>
+
+        <div class="title" id="screenTitle">Patient Dashboard</div>
+
+        <div class="header-controls">
+          <div class="lang-switch">
+            <button id="btn-en" class="active">English</button>
+            <button id="btn-ml">മലയാളം</button>
+          </div>
+          <div class="role-switch">
+            <span class="role-label" id="roleLabel">View as</span>
+            <button id="role-patient" class="active">Patient</button>
+            <button id="role-doctor">Doctor</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===== Main scrollable view ===== -->
+      <main class="content" id="view"><!-- screens render here --></main>
+
+      <button id="install-btn" class="install-btn hidden">⬇ Install App</button>
+
+      <!-- ===== Bottom navigation ===== -->
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-nav="dashboard"><span class="ic">⌂</span><span id="nav-home">Home</span></button>
+        <button class="nav-item" data-nav="treatment"><span class="ic">☘</span><span id="nav-treatment">Treatment</span></button>
+        <button class="nav-item" data-nav="reminders"><span class="ic">⏰</span><span id="nav-reminders">Reminders</span></button>
+        <button class="nav-item" data-nav="visit"><span class="ic">☰</span><span id="nav-more">Menu</span></button>
+      </nav>
+    </div>
+
+    <!-- ===== Slide-in menu (all screens) ===== -->
+    <div id="menu-overlay" class="menu-overlay"></div>
+    <aside id="menu" class="menu">
+      <div class="menu-head">Ayushree</div>
+      <button data-screen="dashboard"><span class="menu-label">Dashboard</span></button>
+      <button data-screen="visit"><span class="menu-label">Registration</span></button>
+      <button data-screen="diagnosis"><span class="menu-label">Diagnosis</span><span class="lock">🔒</span></button>
+      <button data-screen="treatment"><span class="menu-label">Treatment</span></button>
+      <button data-screen="medicine"><span class="menu-label">Medicines</span></button>
+      <button data-screen="reminders"><span class="menu-label">Reminders</span></button>
+      <button data-screen="pathya"><span class="menu-label">Pathya / Apathya</span></button>
+      <button data-screen="followup"><span class="menu-label">Follow-up</span></button>
+      <button data-screen="review"><span class="menu-label">Review</span></button>
+    </aside>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
