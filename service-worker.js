@@ -1,6 +1,6 @@
 /* Service worker — offline-friendly app shell caching.
  * Bump CACHE version whenever you change cached files. */
-const CACHE = "ayushree-v1";
+const CACHE = "ayusree-v3";
 
 const ASSETS = [
   "./",

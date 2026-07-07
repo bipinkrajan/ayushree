@@ -8,10 +8,14 @@
 
 export const CLINIC = {
   /* ---- Identity ---- */
-  id: "ayushree",
+  id: "ayusree",
   name: {
-    en: "Ayushree Ayurvedic Hospital",
-    ml: "ആയുഷ്രീ ആയുര്‍വേദ ആശുപത്രി",
+    en: "Ayu:sree Ayurvedic Hospital",
+    ml: "ആയുഃശ്രീ ആയുര്‍വേദ ആശുപത്രി",
+  },
+  brand: {
+    en: "Ayu:sree",
+    ml: "ആയുഃശ്രീ",
   },
   tagline: {
     en: "Ayurvedic Clinic",
@@ -37,14 +41,18 @@ export const CLINIC = {
 
   /* ---- Contact ---- */
   contact: {
-    phone: "+91 90000 00000",
-    whatsapp: "+91 90000 00000",
+    phone: "+91 97451 22914",
+    whatsapp: "+91 97451 22914",
+    email: "krishnachandrang90@gmail.com",
     address: {
       en: "Karunagappally, Kerala",
       ml: "കരുനാഗപ്പള്ളി, കേരളം",
     },
-    mapUrl: "https://maps.google.com/?q=Ayushree+Ayurvedic+Hospital",
+    mapUrl: "https://maps.google.com/?q=Ayu:sree+Ayurvedic+Hospital",
   },
+
+  /* ---- Public site URL (used for Ads share links) ---- */
+  siteUrl: "https://ayu-sree.in",
 
   /* ---- Google Review link ----
    * Replace with the clinic's real Google review URL.

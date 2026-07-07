@@ -1,6 +1,6 @@
 {
-  "name": "Ayushree Ayurvedic Hospital",
-  "short_name": "Ayushree",
+  "name": "Ayu:sree Ayurvedic Hospital",
+  "short_name": "Ayu:sree",
   "description": "Patient treatment records, reminders and follow-ups for Ayurveda patients.",
   "start_url": "./index.html",
   "scope": "./",

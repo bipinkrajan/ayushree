@@ -75,6 +75,39 @@ function seed() {
       { id: "r3", time: "20:00", label: "Apply oil", kind: "external" },
     ],
     progress: { completedDays: 8 }, // day 8 of 30
+
+    /* ---- Ads / promotions (hospital editable) ----
+     * Each flyer: bilingual title/body, an optional badge, and a
+     * theme colour for the banner. Patients can share any flyer. */
+    ads: [
+      {
+        id: "ad1", color: "#245b35",
+        badge: { en: "Offer", ml: "ഓഫര്‍" },
+        title: { en: "Panchakarma Detox Package", ml: "പഞ്ചകര്‍മ്മ ഡിറ്റോക്സ് പാക്കേജ്" },
+        body: {
+          en: "20% off the 21-day seasonal detox this month. Book your consultation today.",
+          ml: "ഈ മാസം 21 ദിവസത്തെ സീസണല്‍ ഡിറ്റോക്സിന് 20% ഇളവ്. ഇന്ന് തന്നെ ബുക്ക് ചെയ്യൂ.",
+        },
+      },
+      {
+        id: "ad2", color: "#d9822b",
+        badge: { en: "New", ml: "പുതിയത്" },
+        title: { en: "Free Wellness Check Camp", ml: "സൗജന്യ വെല്‍നസ് ചെക്ക് ക്യാമ്പ്" },
+        body: {
+          en: "Free pulse diagnosis and diet advice this Sunday, 9 AM – 1 PM at the clinic.",
+          ml: "ഈ ഞായറാഴ്ച രാവിലെ 9 മുതല്‍ ഉച്ചക്ക് 1 വരെ സൗജന്യ നാഡീ പരിശോധനയും ഭക്ഷണ ഉപദേശവും.",
+        },
+      },
+      {
+        id: "ad3", color: "#3f7a45",
+        badge: { en: "Tip", ml: "ടിപ്പ്" },
+        title: { en: "Monsoon Immunity Kashayam", ml: "മഴക്കാല പ്രതിരോധ കഷായം" },
+        body: {
+          en: "Boost immunity this monsoon with our herbal kashayam. Ask at the counter.",
+          ml: "ഈ മഴക്കാലത്ത് ഞങ്ങളുടെ ഹെര്‍ബല്‍ കഷായത്തിലൂടെ പ്രതിരോധശേഷി വര്‍ധിപ്പിക്കൂ.",
+        },
+      },
+    ],
   };
 }
 

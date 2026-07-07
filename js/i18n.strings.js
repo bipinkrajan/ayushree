@@ -4,7 +4,15 @@ export const STRINGS = {
   en: {
     // nav / general
     home: "Home", treatment: "Treatment", reminders: "Reminders", contact: "Contact",
+    ads: "Ads", contacts: "Contacts",
     menu: "Menu", back: "Back", save: "Save", saved: "Saved", cancel: "Cancel",
+    // ads
+    adsTitle: "Offers & Updates",
+    share: "Share", linkCopied: "Link copied to share",
+    // contacts
+    contactsTitle: "Contact Us",
+    call: "Call", whatsapp: "WhatsApp", email: "Email", directions: "Directions",
+    phoneLabel: "Phone", emailLabel: "Email", doctorLabel: "Doctor",
     patientView: "Patient", doctorView: "Doctor", roleLabel: "View as",
     // screen titles
     titleDashboard: "Patient Dashboard",
@@ -83,7 +91,13 @@ export const STRINGS = {
 
   ml: {
     home: "ഹോം", treatment: "ചികിത്സ", reminders: "ഓര്‍മ്മപ്പെടുത്തല്‍", contact: "ബന്ധപ്പെടുക",
+    ads: "പരസ്യങ്ങള്‍", contacts: "ബന്ധപ്പെടുക",
     menu: "മെനു", back: "തിരികെ", save: "സേവ്", saved: "സേവ് ചെയ്തു", cancel: "റദ്ദാക്കുക",
+    adsTitle: "ഓഫറുകളും അപ്ഡേറ്റുകളും",
+    share: "പങ്കിടുക", linkCopied: "ലിങ്ക് പകര്‍ത്തി",
+    contactsTitle: "ഞങ്ങളെ ബന്ധപ്പെടുക",
+    call: "വിളിക്കുക", whatsapp: "വാട്ട്സ്ആപ്പ്", email: "ഇമെയില്‍", directions: "വഴി കാണിക്കുക",
+    phoneLabel: "ഫോണ്‍", emailLabel: "ഇമെയില്‍", doctorLabel: "ഡോക്ടര്‍",
     patientView: "രോഗി", doctorView: "ഡോക്ടര്‍", roleLabel: "കാണുന്നത്",
     titleDashboard: "രോഗി ഡാഷ്ബോര്‍ഡ്",
     newPatientVisit: "രോഗി രജിസ്ട്രേഷന്‍",

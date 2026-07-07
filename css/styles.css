@@ -27,12 +27,12 @@ body{
 }
 
 /* ===== Header ===== */
-.app-header{ background:var(--green); color:#fff; padding:14px 16px 14px; }
+.app-header{ background:var(--green); color:#fff; padding:12px 14px 14px; }
 .header-top{ display:flex; align-items:center; gap:10px; }
-.logo{ width:34px; height:34px; background:#fff; border-radius:8px; padding:3px; }
-.header-titles{ flex:1; min-width:0; }
-.clinic{ font-size:14px; font-weight:700; line-height:1.2; }
-.doctor{ font-size:11px; opacity:.9; margin-top:2px; }
+.logo-bar{ flex:1; background:#fff; border-radius:14px; padding:8px 14px;
+  display:flex; justify-content:center; align-items:center; min-width:0; }
+.brand-logo{ height:42px; width:auto; max-width:100%; display:block; }
+.doctor{ font-size:12px; opacity:.92; margin-top:10px; }
 .icon-btn{ background:rgba(255,255,255,.15); border:0; color:#fff; font-size:18px;
   width:36px; height:36px; border-radius:10px; cursor:pointer; }
 .title{ font-size:20px; font-weight:700; margin-top:10px; }
@@ -110,10 +110,30 @@ textarea{ min-height:64px; resize:vertical; }
 /* bottom nav */
 .bottom-nav{ height:60px; background:#fff; border-top:1px solid var(--border);
   display:grid; grid-template-columns:repeat(4,1fr); }
+.bottom-nav.nav-5{ grid-template-columns:repeat(5,1fr); }
 .nav-item{ background:none; border:0; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:2px; font-size:11px; color:var(--muted); cursor:pointer; }
+  align-items:center; justify-content:center; gap:2px; font-size:10.5px; color:var(--muted); cursor:pointer; }
 .nav-item .ic{ font-size:18px; }
 .nav-item.active{ color:var(--green); font-weight:700; }
+
+/* ads / flyers */
+.flyers{ display:flex; flex-direction:column; gap:12px; }
+.flyer{ background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden;
+  box-shadow:0 3px 10px rgba(0,0,0,.05); }
+.flyer-banner{ padding:20px 16px; color:#fff; position:relative; }
+.flyer-badge{ position:absolute; top:12px; right:12px; background:rgba(255,255,255,.22);
+  color:#fff; font-size:11px; padding:3px 10px; border-radius:999px; }
+.flyer-title{ font-size:18px; font-weight:700; line-height:1.25; max-width:80%; }
+.flyer-body{ padding:14px 16px; }
+.flyer-body p{ margin:0 0 12px; font-size:13.5px; color:var(--text); line-height:1.5; }
+.share-ic{ font-size:15px; }
+
+/* contact action buttons */
+.contact-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.contact-btn{ display:flex; align-items:center; justify-content:center; gap:8px;
+  text-decoration:none; background:#e7f2e2; color:var(--green); font-weight:700;
+  border-radius:12px; padding:14px; font-size:14px; }
+.contact-btn span{ font-size:18px; }
 
 /* menu drawer */
 .menu-overlay{ position:absolute; inset:0; background:rgba(0,0,0,.4); opacity:0;

@@ -6,9 +6,7 @@
 import { t, L, getLang } from "./i18n.js";
 import { getData, isDoctor } from "./store.js";
 import { CLINIC } from "../config/clinic.config.js";
-import {
-  HEALTH_ISSUES, TREATMENTS, MEDICINES, PATHYA, APATHYA, ADVICE,
-} from "../config/libraries.js";
+import { HEALTH_ISSUES, TREATMENTS, MEDICINES, ADVICE } from "../config/libraries.js";
 import {
   card, row, pill, field, input, textarea, select, button,
   chipSelect, doctorOnly, esc,
@@ -57,7 +55,27 @@ export function dashboard() {
     `)}`;
 }
 
-/* ---------------- 2. REGISTRATION / VISIT ---------------- */
+/* ---------------- 2. ADS / PROMOTIONS (with share) ---------------- */
+export function ads() {
+  const d = getData();
+  if (!d.ads || !d.ads.length) return card("adsTitle", `<p class="muted-note">${t("none")}</p>`);
+  const flyer = (a) => `
+    <div class="flyer">
+      <div class="flyer-banner" style="background:${esc(a.color)}">
+        ${a.badge ? `<span class="flyer-badge">${esc(L(a.badge))}</span>` : ""}
+        <div class="flyer-title">${esc(L(a.title))}</div>
+      </div>
+      <div class="flyer-body">
+        <p>${esc(L(a.body))}</p>
+        <button class="btn small orange" data-action="share-ad" data-id="${a.id}">
+          <span class="share-ic">⤴</span> ${t("share")}
+        </button>
+      </div>
+    </div>`;
+  return `<div class="flyers">${d.ads.map(flyer).join("")}</div>`;
+}
+
+/* ---------------- 3. REGISTRATION / VISIT ---------------- */
 export function visit() {
   const d = getData();
   const p = d.patient;
@@ -83,12 +101,10 @@ export function visit() {
     </form>`;
 }
 
-/* ---------------- 3. DIAGNOSIS (doctor-only) ---------------- */
+/* ---------------- 4. DIAGNOSIS (doctor-only) ---------------- */
 export function diagnosis() {
   const d = getData();
   const dx = d.diagnosis;
-
-  // Patient view: only show if doctor chose to share
   if (!isDoctor()) {
     if (!dx.sharedWithPatient) {
       return card("diagnosis", `<p class="muted-note">🔒 ${t("hiddenFromPatient")}</p>`);
@@ -97,8 +113,6 @@ export function diagnosis() {
       ${row("diagnosis", dx.text)}
       <p style="font-size:13px">${esc(dx.notes)}</p>`);
   }
-
-  // Doctor view: full editable form
   return `
     <form data-form="diagnosis">
     ${card("diagnosis", `
@@ -114,10 +128,11 @@ export function diagnosis() {
     </form>`;
 }
 
-/* ---------------- 4. TREATMENT PLAN ---------------- */
+/* ---------------- 5. TREATMENT PLAN (+ doctor advice) ---------------- */
 export function treatment() {
   const d = getData();
   const tr = d.treatment;
+  const adv = d.pathya; // advice do/dont still stored here
   const docs = CLINIC.doctors.map((x) => ({ value: x.name, label: x.name }));
   const treatOpts = TREATMENTS.map((x) => ({ value: L(x), label: L(x) }));
   return `
@@ -127,12 +142,16 @@ export function treatment() {
       ${field("treatmentName", select("name", treatOpts, tr.name))}
       ${field("duration", input("durationDays", tr.durationDays, "number"))}
       ${field("therapyInstructions", textarea("instructions", tr.instructions))}
-      ${button("saveTreatment", { action: "save-treatment" })}
     `)}
+    ${card("adviceDo", chipSelect("adviceDo",
+      ADVICE.do.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDo), { rawTitle: false })}
+    ${card("adviceNotDo", chipSelect("adviceDont",
+      ADVICE.dont.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDont))}
+    ${button("saveTreatment", { action: "save-treatment" })}
     </form>`;
 }
 
-/* ---------------- 5. MEDICINES & INTAKE + REFILL ---------------- */
+/* ---------------- 6. MEDICINES & INTAKE + REFILL ---------------- */
 export function medicine() {
   const d = getData();
   const foodOpts = [
@@ -170,7 +189,7 @@ export function medicine() {
     </form>`;
 }
 
-/* ---------------- 6. REMINDERS (kashayam / external / appointment) ---------------- */
+/* ---------------- 7. REMINDERS (kashayam / external / appointment) ---------------- */
 export function reminders() {
   const d = getData();
   const byKind = (kind) => d.reminders.filter((r) => r.kind === kind);
@@ -189,25 +208,34 @@ export function reminders() {
       row(fmtDate(a.date), a.time, true)).join(""))}`;
 }
 
-/* ---------------- 7. PATHYA / APATHYA + ADVICE ---------------- */
-export function pathya() {
-  const d = getData();
-  const pa = d.pathya;
+/* ---------------- 8. CONTACTS ---------------- */
+export function contacts() {
+  const c = CLINIC.contact;
+  const doc = CLINIC.doctors[0];
+  const tel = (c.phone || "").replace(/[^\d+]/g, "");
+  const wa = (c.whatsapp || "").replace(/[^\d]/g, "");
   return `
-    <form data-form="pathya">
-    ${card("foodsAllowed", chipSelect("allowed",
-      PATHYA.map((x) => ({ id: x.id, label: L(x) })), pa.allowed))}
-    ${card("foodsAvoid", chipSelect("avoid",
-      APATHYA.map((x) => ({ id: x.id, label: L(x) })), pa.avoid))}
-    ${card("adviceDo", chipSelect("adviceDo",
-      ADVICE.do.map((x) => ({ id: x.id, label: L(x) })), pa.adviceDo))}
-    ${card("adviceNotDo", chipSelect("adviceDont",
-      ADVICE.dont.map((x) => ({ id: x.id, label: L(x) })), pa.adviceDont))}
-    ${button("saveAdvice", { action: "save-pathya" })}
-    </form>`;
+    ${card("contactsTitle", `
+      ${row("doctorLabel", doc.name)}
+      ${row("phoneLabel", c.phone)}
+      ${c.email ? row("emailLabel", c.email) : ""}
+      ${row("address", L(c.address))}
+    `)}
+    ${card("", `
+      <div class="contact-actions">
+        <a class="contact-btn" href="tel:${esc(tel)}"><span>📞</span>${t("call")}</a>
+        <a class="contact-btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener"><span>💬</span>${t("whatsapp")}</a>
+        <a class="contact-btn" href="mailto:${esc(c.email || "")}"><span>✉</span>${t("email")}</a>
+        <a class="contact-btn" href="${esc(c.mapUrl)}" target="_blank" rel="noopener"><span>📍</span>${t("directions")}</a>
+      </div>
+    `)}
+    ${card("patientReview", `
+      <p class="muted-note">${t("reviewText")}</p>
+      ${button("googleReview", { cls: "orange", action: "google-review" })}
+    `)}`;
 }
 
-/* ---------------- 8. FOLLOW-UP -> APPOINTMENT ---------------- */
+/* ---------------- 9. FOLLOW-UP -> APPOINTMENT ---------------- */
 export function followup() {
   const d = getData();
   const f = d.followup;
@@ -227,7 +255,7 @@ export function followup() {
     </form>`;
 }
 
-/* ---------------- 9. REVIEW ---------------- */
+/* ---------------- 10. REVIEW ---------------- */
 export function review() {
   return card("patientReview", `
     <p class="muted-note">${t("reviewText")}</p>
@@ -238,12 +266,13 @@ export function review() {
 /* Screen registry: id -> { render, titleKey } */
 export const SCREENS = {
   dashboard: { render: dashboard, titleKey: "titleDashboard" },
+  ads:       { render: ads,       titleKey: "adsTitle" },
   visit:     { render: visit,     titleKey: "newPatientVisit" },
-  diagnosis: { render: diagnosis, titleKey: "diagnosis", doctorOnly: false },
+  diagnosis: { render: diagnosis, titleKey: "diagnosis" },
   treatment: { render: treatment, titleKey: "treatmentPlan" },
   medicine:  { render: medicine,  titleKey: "medicinesIntake" },
   reminders: { render: reminders, titleKey: "remindersTitle" },
-  pathya:    { render: pathya,    titleKey: "pathyaApathya" },
+  contacts:  { render: contacts,  titleKey: "contactsTitle" },
   followup:  { render: followup,  titleKey: "followupAppointment" },
   review:    { render: review,    titleKey: "patientReview" },
 };
