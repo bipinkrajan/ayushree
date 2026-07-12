@@ -1,0 +1,372 @@
+/* =============================================================
+ * Ayu:sree ADMIN — staff console (Supabase Auth + REST).
+ * Staff log in with email/password; RLS scopes everything to
+ * their clinic. English UI (clinic-facing).
+ * ============================================================= */
+import { SUPABASE } from "../config/supabase.config.js";
+import { CLINIC } from "../config/clinic.config.js";
+import { HEALTH_ISSUES, TREATMENTS, MEDICINES, ADVICE } from "../config/libraries.js";
+
+const LS = "ayusree.admin.v1";
+let S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [] };
+
+/* ---------- helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const el = (id) => S.token; // noop guard
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 1800); }
+const latest = (arr) => (arr && arr.length) ? arr.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] : null;
+
+/* ---------- API ---------- */
+function headers(extra) {
+  return Object.assign({ apikey: SUPABASE.anonKey, Authorization: "Bearer " + (S.token || SUPABASE.anonKey), "Content-Type": "application/json" }, extra || {});
+}
+async function authLogin(email, password) {
+  const r = await fetch(`${SUPABASE.url}/auth/v1/token?grant_type=password`, {
+    method: "POST", headers: { apikey: SUPABASE.anonKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error_description || data.msg || data.error_code || data.error || ("HTTP " + r.status));
+  return data;
+}
+async function rest(method, path, opts = {}) {
+  const h = headers(opts.prefer ? { Prefer: opts.prefer } : null);
+  const r = await fetch(`${SUPABASE.url}/rest/v1/${path}`, { method, headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  if (r.status === 401) { logout(); throw new Error("session expired"); }
+  if (!r.ok) throw new Error(await r.text());
+  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+}
+const rpc = (fn, body) => rest("POST", `rpc/${fn}`, { body });
+
+/* ---------- Boot ---------- */
+function boot() {
+  const saved = localStorage.getItem(LS);
+  if (saved) { S = Object.assign(S, JSON.parse(saved)); }
+  wire();
+  if (S.token) showApp(); else showLogin();
+}
+function persist() { localStorage.setItem(LS, JSON.stringify({ token: S.token, clinicId: S.clinicId, name: S.name })); }
+
+function wire() {
+  $("login-btn").onclick = doLogin;
+  $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+  $("logout").onclick = logout;
+  $("tab-patients").onclick = () => { S.tab = "patients"; S.current = null; showApp(); };
+  $("tab-offers").onclick = () => { S.tab = "offers"; showApp(); };
+  $("view").addEventListener("click", onClick);
+  $("view").addEventListener("change", onChange);
+}
+
+/* ---------- Login ---------- */
+async function doLogin() {
+  const email = $("email").value.trim().toLowerCase(), password = $("password").value;
+  const err = $("login-err"); err.classList.add("hidden");
+  const btn = $("login-btn"); btn.disabled = true; btn.textContent = "Logging in…";
+  try {
+    const auth = await authLogin(email, password);
+    S.token = auth.access_token;
+    const staff = await rest("GET", "staff?select=clinic_id,name,role");
+    if (!staff || !staff.length) throw new Error("no staff record");
+    S.clinicId = staff[0].clinic_id; S.name = staff[0].name;
+    persist(); $("password").value = "";
+    S.tab = "patients"; showApp();
+  } catch (e) {
+    err.textContent = "Login error: " + (e.message || "unknown"); err.classList.remove("hidden");
+  } finally { btn.disabled = false; btn.textContent = "Log in"; }
+}
+function logout() { S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [] }; localStorage.removeItem(LS); showLogin(); }
+
+function showLogin() { $("login").classList.remove("hidden"); $("app").classList.add("hidden"); }
+function showApp() {
+  $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+  $("who").textContent = S.name || "";
+  $("tab-patients").classList.toggle("active", S.tab === "patients");
+  $("tab-offers").classList.toggle("active", S.tab === "offers");
+  if (S.tab === "offers") loadOffers();
+  else if (S.current) renderPatient();
+  else loadPatients();
+}
+
+/* ---------- Patients list ---------- */
+async function loadPatients() {
+  $("view").innerHTML = `<p class="muted">Loading…</p>`;
+  try {
+    S.patients = await rest("GET", "patients?select=id,op_number,name,mobile,last_visit_at&order=name.asc");
+    renderList();
+  } catch (e) { $("view").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+function renderList(filter = "") {
+  const f = filter.toLowerCase();
+  const rows = S.patients.filter((p) => !f || (p.name || "").toLowerCase().includes(f) || (p.op_number || "").toLowerCase().includes(f));
+  $("view").innerHTML = `
+    <div class="searchbar">
+      <input id="search" placeholder="Search by name or OP number" value="${esc(filter)}">
+      <button class="btn" data-act="new-patient">+ New Patient</button>
+    </div>
+    <div class="plist">
+      ${rows.map((p) => `
+        <div class="pitem" data-act="open" data-id="${p.id}">
+          <div><div class="op">${esc(p.op_number)}</div><div>${esc(p.name)}</div></div>
+          <div class="meta">${esc(p.mobile || "")}<br>${p.last_visit_at || ""}</div>
+        </div>`).join("") || `<p class="muted">No patients yet. Add one.</p>`}
+    </div>`;
+  $("search").oninput = (e) => renderList(e.target.value);
+}
+
+function suggestOp() {
+  const y = new Date().getFullYear();
+  const seq = String(S.patients.length + 1).padStart(CLINIC.opNumber.seqPadding, "0");
+  return `${CLINIC.opNumber.prefix}-${y}-${seq}`;
+}
+
+/* ---------- Open / load one patient ---------- */
+async function openPatient(id) {
+  $("view").innerHTML = `<p class="muted">Loading…</p>`;
+  const sel = "*,visits(*),diagnoses(*),treatments(*),medicines(*),reminders(*),appointments(*)";
+  const rows = await rest("GET", `patients?id=eq.${id}&select=${encodeURIComponent(sel)}`);
+  const p = rows[0];
+  S.current = {
+    patient: p,
+    visit: latest(p.visits) || {},
+    diagnosis: latest(p.diagnoses) || {},
+    treatment: latest(p.treatments) || {},
+    medicines: p.medicines || [],
+    reminders: p.reminders || [],
+    followup: (p.appointments || []).find((a) => a.type === "followup") || {},
+  };
+  renderPatient();
+}
+function newPatient() {
+  S.current = { patient: { id: null, op_number: suggestOp() }, visit: {}, diagnosis: {}, treatment: {}, medicines: [], reminders: [], followup: {} };
+  renderPatient();
+}
+
+/* ---------- Patient editor ---------- */
+function chipRow(name, list, selected) {
+  return `<div class="chips" data-chips="${name}">${list.map((x) =>
+    `<button type="button" class="chip ${(selected || []).includes(x.id) ? "on" : ""}" data-id="${x.id}">${esc(x.en)}</button>`).join("")}</div>`;
+}
+function renderPatient() {
+  const c = S.current, p = c.patient, v = c.visit, d = c.diagnosis, tr = c.treatment, f = c.followup;
+  const opts = (arr, val, key = "en") => arr.map((x) => `<option ${((x[key]) === val) ? "selected" : ""}>${esc(x[key])}</option>`).join("");
+  $("view").innerHTML = `
+    <button class="back" data-act="back">‹ All patients</button>
+
+    <div class="card"><h3>Registration</h3>
+      <div class="row2">
+        <div class="field"><label>OP Number</label><input data-f="op_number" value="${esc(p.op_number || "")}"></div>
+        <div class="field"><label>Name</label><input data-f="name" value="${esc(p.name || "")}"></div>
+        <div class="field"><label>Age</label><input data-f="age" type="number" value="${esc(p.age ?? "")}"></div>
+        <div class="field"><label>Mobile</label><input data-f="mobile" value="${esc(p.mobile || "")}"></div>
+        <div class="field"><label>Address</label><input data-f="address" value="${esc(p.address || "")}"></div>
+        <div class="field"><label>Referred by</label><input data-f="referred_by" value="${esc(p.referred_by || "")}"></div>
+      </div>
+      <button class="btn block" data-act="save-patient">${p.id ? "Save patient" : "Create patient"}</button>
+    </div>
+
+    ${p.id ? patientBody(v, d, tr, f) : `<p class="muted">Create the patient first, then add records and set a login PIN.</p>`}
+  `;
+}
+function patientBody(v, d, tr, f) {
+  return `
+    <div class="card"><h3>Login PIN</h3>
+      <div class="field"><label>Set / reset PIN (share with patient)</label><input data-f="pin" placeholder="e.g. 1234"></div>
+      <button class="btn light" data-act="set-pin">Save PIN</button>
+      <p class="pin-note">Patient logs in with their OP number + this PIN.</p>
+    </div>
+
+    <div class="card"><h3>Current issue</h3>
+      <div class="field"><label>Main issue</label><input data-f="issue" value="${esc(v.issue || "")}"></div>
+      <div class="field"><label>History / symptoms</label><textarea data-f="history">${esc(v.history || "")}</textarea></div>
+      <div class="field"><label>Medicines / treatments already taken</label><textarea data-f="previous_treatment">${esc(v.previous_treatment || "")}</textarea></div>
+      <div class="field"><label>Other health issues</label>${chipRow("other_issues", HEALTH_ISSUES, v.other_issues)}</div>
+      <button class="btn block" data-act="save-visit">Save current issue</button>
+    </div>
+
+    <div class="card"><h3>Diagnosis (doctor only)</h3>
+      <div class="field"><label>Diagnosis</label><textarea data-f="dx_text">${esc(d.text || "")}</textarea></div>
+      <div class="field"><label>Clinical notes</label><textarea data-f="dx_notes">${esc(d.notes || "")}</textarea></div>
+      <label class="switch-row"><input type="checkbox" data-f="dx_share" ${d.shared_with_patient ? "checked" : ""}> Share diagnosis with patient</label>
+      <button class="btn block" data-act="save-diagnosis">Save diagnosis</button>
+    </div>
+
+    <div class="card"><h3>Treatment plan</h3>
+      <div class="row2">
+        <div class="field"><label>Suggested by</label><select data-f="tr_by">${CLINIC.doctors.map((x) => `<option ${x.name === tr.by_doctor ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></div>
+        <div class="field"><label>Treatment</label><select data-f="tr_name"><option value=""></option>${TREATMENTS.map((x) => `<option ${x.en === tr.name ? "selected" : ""}>${esc(x.en)}</option>`).join("")}</select></div>
+        <div class="field"><label>Duration (days)</label><input data-f="tr_days" type="number" value="${esc(tr.duration_days || 30)}"></div>
+      </div>
+      <div class="field"><label>Therapy instructions</label><textarea data-f="tr_instr">${esc(tr.instructions || "")}</textarea></div>
+      <div class="field"><label>Advice — what to do</label>${chipRow("advice_do", ADVICE.do, tr.advice_do)}</div>
+      <div class="field"><label>Advice — what not to do</label>${chipRow("advice_dont", ADVICE.dont, tr.advice_dont)}</div>
+      <button class="btn block" data-act="save-treatment">Save treatment</button>
+    </div>
+
+    <div class="card"><h3>Medicines</h3>
+      <div id="medlist">${(S.current.medicines || []).map(medRow).join("") || `<p class="muted">None yet.</p>`}</div>
+      <div class="row2">
+        <div class="field"><label>Medicine</label><select data-f="m_name">${MEDICINES.map((x) => `<option>${esc(x.en)}</option>`).join("")}</select></div>
+        <div class="field"><label>Timing</label><input data-f="m_timing" placeholder="7:00 AM, 7:00 PM"></div>
+        <div class="field"><label>Dosage</label><input data-f="m_dosage" placeholder="15 ml with warm water"></div>
+        <div class="field"><label>Before / after food</label><select data-f="m_food"><option value="before">Before food</option><option value="after">After food</option></select></div>
+        <div class="field"><label>Refill date</label><input data-f="m_refill" type="date"></div>
+        <div class="field"><label>Instructions</label><input data-f="m_instr"></div>
+      </div>
+      <button class="btn light" data-act="add-medicine">+ Add medicine</button>
+    </div>
+
+    <div class="card"><h3>Reminders</h3>
+      <div id="remlist">${(S.current.reminders || []).map(remRow).join("") || `<p class="muted">None yet.</p>`}</div>
+      <div class="row2">
+        <div class="field"><label>Time</label><input data-f="r_time" type="time"></div>
+        <div class="field"><label>Label</label><input data-f="r_label" placeholder="Kashayam"></div>
+        <div class="field"><label>Type</label><select data-f="r_kind"><option value="kashayam">Kashayam</option><option value="medicine">Medicine</option><option value="external">External application</option></select></div>
+      </div>
+      <button class="btn light" data-act="add-reminder">+ Add reminder</button>
+    </div>
+
+    <div class="card"><h3>Follow-up appointment</h3>
+      <div class="row2">
+        <div class="field"><label>Date</label><input data-f="f_date" type="date" value="${esc(f.date || "")}"></div>
+        <div class="field"><label>Time</label><input data-f="f_time" type="time" value="${esc(f.time || "")}"></div>
+      </div>
+      <button class="btn block" data-act="save-followup">Save follow-up</button>
+    </div>`;
+}
+const medRow = (m) => `<div class="med"><div class="top"><strong>${esc(m.name)}</strong>
+  <button class="btn danger sm" data-act="del-medicine" data-id="${m.id}">Remove</button></div>
+  <div class="muted">${esc(m.timing || "")} · ${esc(m.dosage || "")} · ${m.food === "after" ? "after food" : "before food"}</div></div>`;
+const remRow = (r) => `<div class="med"><div class="top"><strong>${esc(r.time)} — ${esc(r.label)}</strong>
+  <button class="btn danger sm" data-act="del-reminder" data-id="${r.id}">Remove</button></div></div>`;
+
+/* ---------- collect fields ---------- */
+function fields() {
+  const o = {};
+  document.querySelectorAll("[data-f]").forEach((e) => { o[e.dataset.f] = e.type === "checkbox" ? e.checked : e.value; });
+  document.querySelectorAll("[data-chips]").forEach((cs) => { o[cs.dataset.chips] = [...cs.querySelectorAll(".chip.on")].map((c) => c.dataset.id); });
+  return o;
+}
+
+/* ---------- click routing ---------- */
+function onChange(e) { /* reserved (image inputs handled in offers) */ if (e.target.dataset && e.target.dataset.act === "offer-image") handleOfferImage(e.target); }
+async function onClick(e) {
+  const chip = e.target.closest(".chip"); if (chip) { chip.classList.toggle("on"); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act, id = b.dataset.id;
+  const map = {
+    "new-patient": newPatient,
+    "open": () => openPatient(id),
+    "back": () => { S.current = null; loadPatients(); },
+    "save-patient": savePatient,
+    "set-pin": setPin,
+    "save-visit": saveVisit,
+    "save-diagnosis": saveDiagnosis,
+    "save-treatment": saveTreatment,
+    "add-medicine": addMedicine,
+    "del-medicine": () => delMedicine(id),
+    "add-reminder": addReminder,
+    "del-reminder": () => delReminder(id),
+    "save-followup": saveFollowup,
+    "add-offer": addOffer,
+    "del-offer": () => delOffer(id),
+  };
+  if (map[act]) { e.preventDefault(); try { await map[act](); } catch (err) { toast(err.message.slice(0, 80)); } }
+}
+
+/* ---------- saves ---------- */
+async function savePatient() {
+  const f = fields();
+  const row = { name: f.name, age: f.age ? Number(f.age) : null, mobile: f.mobile, address: f.address, referred_by: f.referred_by, op_number: f.op_number };
+  if (S.current.patient.id) {
+    await rest("PATCH", `patients?id=eq.${S.current.patient.id}`, { body: row });
+    toast("Saved");
+  } else {
+    const created = await rest("POST", "patients", { body: Object.assign({ clinic_id: S.clinicId }, row), prefer: "return=representation" });
+    S.current.patient = created[0]; toast("Patient created");
+    await loadPatients(); // refresh count/list cache
+    renderPatient();
+  }
+}
+async function setPin() {
+  const pin = (fields().pin || "").trim(); if (!pin) return toast("Enter a PIN");
+  await rpc("set_patient_pin", { p_patient_id: S.current.patient.id, p_pin: pin });
+  toast("PIN saved");
+}
+async function saveVisit() {
+  const f = fields();
+  await rest("POST", "visits", { body: { patient_id: S.current.patient.id, issue: f.issue, history: f.history, previous_treatment: f.previous_treatment, other_issues: f.other_issues || [] } });
+  toast("Saved"); await openPatient(S.current.patient.id);
+}
+async function saveDiagnosis() {
+  const f = fields();
+  await rest("POST", "diagnoses", { body: { patient_id: S.current.patient.id, text: f.dx_text, notes: f.dx_notes, shared_with_patient: !!f.dx_share } });
+  toast("Saved"); await openPatient(S.current.patient.id);
+}
+async function saveTreatment() {
+  const f = fields();
+  await rest("POST", "treatments", { body: { patient_id: S.current.patient.id, by_doctor: f.tr_by, name: f.tr_name, duration_days: Number(f.tr_days) || 30, instructions: f.tr_instr, advice_do: f.advice_do || [], advice_dont: f.advice_dont || [] } });
+  toast("Saved"); await openPatient(S.current.patient.id);
+}
+async function addMedicine() {
+  const f = fields(); if (!f.m_name) return;
+  await rest("POST", "medicines", { body: { patient_id: S.current.patient.id, name: f.m_name, type: "kashayam", timing: f.m_timing, dosage: f.m_dosage, food: f.m_food, instructions: f.m_instr, refill_date: f.m_refill || null } });
+  toast("Added"); await openPatient(S.current.patient.id);
+}
+async function delMedicine(id) { await rest("DELETE", `medicines?id=eq.${id}`); toast("Removed"); await openPatient(S.current.patient.id); }
+async function addReminder() {
+  const f = fields(); if (!f.r_time) return;
+  await rest("POST", "reminders", { body: { patient_id: S.current.patient.id, time: f.r_time, label: f.r_label, kind: f.r_kind } });
+  toast("Added"); await openPatient(S.current.patient.id);
+}
+async function delReminder(id) { await rest("DELETE", `reminders?id=eq.${id}`); toast("Removed"); await openPatient(S.current.patient.id); }
+async function saveFollowup() {
+  const f = fields(); const pid = S.current.patient.id;
+  await rest("DELETE", `appointments?patient_id=eq.${pid}&type=eq.followup`);
+  await rest("POST", "appointments", { body: { patient_id: pid, date: f.f_date, time: f.f_time, type: "followup", status: "upcoming", reminder_mode: "both" } });
+  toast("Saved"); await openPatient(pid);
+}
+
+/* ---------- Offers ---------- */
+let pendingImg = null;
+async function loadOffers() {
+  $("view").innerHTML = `<p class="muted">Loading…</p>`;
+  S.offers = await rest("GET", "offers?select=*&order=id.desc");
+  $("view").innerHTML = `
+    <div class="card"><h3>Add offer / update</h3>
+      <div class="field"><label>Image (optional)</label><input type="file" accept="image/*" data-act="offer-image"><img id="offer-preview" class="offer-img hidden"></div>
+      <div class="field"><label>Header (bold)</label><input data-f="o_title"></div>
+      <div class="field"><label>Description</label><textarea data-f="o_body"></textarea></div>
+      <div class="field"><label>Badge (optional)</label><input data-f="o_badge" placeholder="Offer / New"></div>
+      <button class="btn block" data-act="add-offer">Publish offer</button>
+    </div>
+    <div class="card"><h3>Published offers</h3>
+      ${S.offers.map((o) => `<div class="med"><div class="top"><strong>${esc(o.title || "")}</strong>
+        <button class="btn danger sm" data-act="del-offer" data-id="${o.id}">Delete</button></div>
+        <div class="muted">${esc(o.body || "")}</div>${o.image_url ? `<img class="offer-img" src="${esc(o.image_url)}">` : ""}</div>`).join("") || `<p class="muted">No offers yet.</p>`}
+    </div>`;
+}
+function handleOfferImage(input) {
+  if (!input.files[0]) return;
+  compress(input.files[0]).then((url) => { pendingImg = url; const pv = $("offer-preview"); pv.src = url; pv.classList.remove("hidden"); });
+}
+async function addOffer() {
+  const f = fields(); if (!f.o_title && !pendingImg) return toast("Add a header or image");
+  await rest("POST", "offers", { body: { clinic_id: S.clinicId, title: f.o_title, body: f.o_body, badge: f.o_badge || null, image_url: pendingImg || null, active: true } });
+  pendingImg = null; toast("Published"); loadOffers();
+}
+async function delOffer(id) { await rest("DELETE", `offers?id=eq.${id}`); toast("Deleted"); loadOffers(); }
+
+function compress(file, maxW = 900, q = 0.72) {
+  return new Promise((res) => {
+    const rd = new FileReader();
+    rd.onload = () => { const img = new Image(); img.onload = () => {
+      const s = Math.min(1, maxW / img.width); const c = document.createElement("canvas");
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL("image/jpeg", q));
+    }; img.onerror = () => res(rd.result); img.src = rd.result; };
+    rd.readAsDataURL(file);
+  });
+}
+
+boot();
