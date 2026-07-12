@@ -13,6 +13,25 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <!-- ===== Login screen (shown when logged out) ===== -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <img class="login-logo" src="assets/logo.svg" alt="Ayu:sree Ayurvedic Clinic" />
+      <div class="login-lang">
+        <button id="lgn-en" class="active">English</button>
+        <button id="lgn-ml">മലയാളം</button>
+      </div>
+      <h2 id="login-title">Patient Login</h2>
+      <div class="field"><label id="lbl-op">OP Number</label>
+        <input id="in-op" autocomplete="username" placeholder="AY-OP-2026-00125" /></div>
+      <div class="field"><label id="lbl-pin">PIN</label>
+        <input id="in-pin" type="password" inputmode="numeric" autocomplete="current-password" /></div>
+      <p id="login-error" class="login-error hidden"></p>
+      <button id="login-btn" class="btn">Login</button>
+      <p class="login-hint" id="login-hint">Ask the clinic for your OP number and PIN.</p>
+    </div>
+  </div>
+
   <!-- App shell: on phones this fills the screen; on desktop it sits in a device frame -->
   <div class="device">
     <div class="app">
@@ -31,11 +50,6 @@
           <div class="lang-switch">
             <button id="btn-en" class="active">English</button>
             <button id="btn-ml">മലയാളം</button>
-          </div>
-          <div class="role-switch">
-            <span class="role-label" id="roleLabel">View as</span>
-            <button id="role-patient" class="active">Patient</button>
-            <button id="role-doctor">Doctor</button>
           </div>
         </div>
       </header>
@@ -69,6 +83,7 @@
       <button data-screen="contacts"><span class="menu-label">Contacts</span></button>
       <button data-screen="followup"><span class="menu-label">Follow-up</span></button>
       <button data-screen="review"><span class="menu-label">Review</span></button>
+      <button id="logout-btn" class="menu-logout"><span class="menu-label">Logout</span></button>
     </aside>
   </div>
 

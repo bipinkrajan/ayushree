@@ -9,6 +9,9 @@ export const STRINGS = {
     // ads
     adsTitle: "Offers & Updates",
     share: "Share", linkCopied: "Link copied to share",
+    addOffer: "Add Offer / Update", offerImage: "Flyer image",
+    offerHeader: "Header (shown in bold)", offerText: "Description",
+    publishOffer: "Publish", chooseImage: "Choose image", published: "Published",
     // contacts
     contactsTitle: "Contact Us",
     call: "Call", whatsapp: "WhatsApp", email: "Email", directions: "Directions",
@@ -87,6 +90,12 @@ export const STRINGS = {
     // misc
     installApp: "Install App", none: "None recorded yet",
     add: "Add", remove: "Remove", clinicName: "Clinic",
+    // login
+    patientLogin: "Patient Login", pin: "PIN", login: "Login",
+    loginHint: "Ask the clinic for your OP number and PIN.",
+    loginInvalid: "Wrong OP number or PIN.",
+    loginNetwork: "Connection problem. Please try again.",
+    loggingIn: "Logging in…", logout: "Logout",
   },
 
   ml: {
@@ -95,6 +104,9 @@ export const STRINGS = {
     menu: "മെനു", back: "തിരികെ", save: "സേവ്", saved: "സേവ് ചെയ്തു", cancel: "റദ്ദാക്കുക",
     adsTitle: "ഓഫറുകളും അപ്ഡേറ്റുകളും",
     share: "പങ്കിടുക", linkCopied: "ലിങ്ക് പകര്‍ത്തി",
+    addOffer: "ഓഫര്‍ / അപ്ഡേറ്റ് ചേര്‍ക്കുക", offerImage: "ഫ്ലയര്‍ ചിത്രം",
+    offerHeader: "തലക്കെട്ട് (ബോള്‍ഡ്)", offerText: "വിവരണം",
+    publishOffer: "പ്രസിദ്ധീകരിക്കുക", chooseImage: "ചിത്രം തിരഞ്ഞെടുക്കുക", published: "പ്രസിദ്ധീകരിച്ചു",
     contactsTitle: "ഞങ്ങളെ ബന്ധപ്പെടുക",
     call: "വിളിക്കുക", whatsapp: "വാട്ട്സ്ആപ്പ്", email: "ഇമെയില്‍", directions: "വഴി കാണിക്കുക",
     phoneLabel: "ഫോണ്‍", emailLabel: "ഇമെയില്‍", doctorLabel: "ഡോക്ടര്‍",
@@ -160,5 +172,10 @@ export const STRINGS = {
     googleReview: "ഗൂഗിളില്‍ ഞങ്ങളെ റിവ്യൂ ചെയ്യുക", maybeLater: "പിന്നീട്",
     installApp: "ആപ്പ് ഇന്‍സ്റ്റാള്‍ ചെയ്യുക", none: "ഇതുവരെ രേഖപ്പെടുത്തിയിട്ടില്ല",
     add: "ചേര്‍ക്കുക", remove: "നീക്കം ചെയ്യുക", clinicName: "ക്ലിനിക്",
+    patientLogin: "രോഗി ലോഗിന്‍", pin: "പിന്‍", login: "ലോഗിന്‍",
+    loginHint: "നിങ്ങളുടെ ഒ.പി നമ്പറും പിന്നും ക്ലിനിക്കില്‍ നിന്ന് ചോദിക്കുക.",
+    loginInvalid: "ഒ.പി നമ്പര്‍ അല്ലെങ്കില്‍ പിന്‍ തെറ്റാണ്.",
+    loginNetwork: "കണക്ഷന്‍ പ്രശ്നം. വീണ്ടും ശ്രമിക്കുക.",
+    loggingIn: "ലോഗിന്‍ ചെയ്യുന്നു…", logout: "ലോഗൗട്ട്",
   },
 };

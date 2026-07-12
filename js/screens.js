@@ -1,7 +1,8 @@
 /* =============================================================
  * SCREENS — one render() function per screen.
- * Each returns an HTML string. Interactivity is wired in app.js
- * via event delegation + data-action attributes.
+ * Doctor role = editable forms. Patient role = read-only views
+ * (admin fills records during the visit). Interactivity wired in
+ * app.js via event delegation + data-action attributes.
  * ============================================================= */
 import { t, L, getLang } from "./i18n.js";
 import { getData, isDoctor } from "./store.js";
@@ -19,6 +20,13 @@ const fmtDate = (iso) => {
     { day: "2-digit", month: "short", year: "numeric" });
 };
 const labelFor = (list, id) => { const x = list.find((i) => i.id === id); return x ? L(x) : id; };
+
+/* read-only labelled text block (for long fields) */
+const block = (labelKey, text) =>
+  `<div class="ro-block"><div class="ro-label">${t(labelKey)}</div><div class="ro-text">${esc(text || "-")}</div></div>`;
+/* read-only pills from a library id list */
+const pillList = (list, ids, tone = "") =>
+  (ids && ids.length) ? ids.map((id) => pill(labelFor(list, id), tone)).join("") : `<span class="muted-note">${t("none")}</span>`;
 
 /* ---------------- 1. DASHBOARD ---------------- */
 export function dashboard() {
@@ -55,24 +63,51 @@ export function dashboard() {
     `)}`;
 }
 
-/* ---------------- 2. ADS / PROMOTIONS (with share) ---------------- */
-export function ads() {
-  const d = getData();
-  if (!d.ads || !d.ads.length) return card("adsTitle", `<p class="muted-note">${t("none")}</p>`);
-  const flyer = (a) => `
+/* ---------------- 2. ADS / OFFERS (view + share; doctor can add) ---------------- */
+function flyerHtml(a) {
+  const doc = isDoctor();
+  const media = a.image
+    ? `<img class="flyer-img" src="${esc(a.image)}" alt="">`
+    : `<div class="flyer-banner" style="background:${esc(a.color || "#245b35")}">
+         ${a.badge ? `<span class="flyer-badge">${esc(L(a.badge))}</span>` : ""}
+         <div class="flyer-title">${esc(L(a.title))}</div>
+       </div>`;
+  return `
     <div class="flyer">
-      <div class="flyer-banner" style="background:${esc(a.color)}">
-        ${a.badge ? `<span class="flyer-badge">${esc(L(a.badge))}</span>` : ""}
-        <div class="flyer-title">${esc(L(a.title))}</div>
-      </div>
+      ${media}
       <div class="flyer-body">
+        ${a.image ? `<div class="flyer-title dark">${esc(L(a.title))}</div>` : ""}
         <p>${esc(L(a.body))}</p>
-        <button class="btn small orange" data-action="share-ad" data-id="${a.id}">
-          <span class="share-ic">⤴</span> ${t("share")}
-        </button>
+        <div class="flyer-actions">
+          <button class="btn small orange" data-action="share-ad" data-id="${a.id}"><span class="share-ic">⤴</span> ${t("share")}</button>
+          ${doc ? `<button class="btn small light" data-action="delete-ad" data-id="${a.id}">${t("remove")}</button>` : ""}
+        </div>
       </div>
     </div>`;
-  return `<div class="flyers">${d.ads.map(flyer).join("")}</div>`;
+}
+
+export function ads() {
+  const d = getData();
+  const list = (d.ads && d.ads.length)
+    ? `<div class="flyers">${d.ads.map(flyerHtml).join("")}</div>`
+    : `<p class="muted-note">${t("none")}</p>`;
+
+  // doctor/admin: add-offer form with image upload
+  const addForm = isDoctor() ? `
+    <form data-form="newad">
+    ${card("addOffer", `
+      <div class="field">
+        <label>${t("offerImage")}</label>
+        <input type="file" accept="image/*" name="image" id="ad-image">
+        <img id="ad-preview" class="ad-preview hidden" alt="">
+      </div>
+      ${field("offerHeader", input("title", ""))}
+      ${field("offerText", textarea("body", ""))}
+      ${button("publishOffer", { action: "publish-ad" })}
+    `)}
+    </form>` : "";
+
+  return list + addForm;
 }
 
 /* ---------------- 3. REGISTRATION / VISIT ---------------- */
@@ -80,6 +115,26 @@ export function visit() {
   const d = getData();
   const p = d.patient;
   const ci = d.currentIssue;
+
+  if (!isDoctor()) {
+    return `
+      ${card("patientOverview", `
+        ${row("opNumber", p.opNumber)}
+        ${row("name", p.name)}
+        ${row("age", p.age)}
+        ${row("mobileNumber", p.mobile)}
+        ${row("address", p.address)}
+        ${row("referredBy", p.referredBy)}
+      `)}
+      ${card("currentHealthIssue", `
+        ${row("issue", ci.issue)}
+        ${block("history", ci.history)}
+        ${block("previousTreatment", ci.previousTreatment)}
+        <div class="ro-label">${t("otherIssues")}</div>
+        <div>${pillList(HEALTH_ISSUES, ci.otherIssues, "orange")}</div>
+      `)}`;
+  }
+
   return `
     <form data-form="visit">
     ${card("patientOverview", `
@@ -110,8 +165,8 @@ export function diagnosis() {
       return card("diagnosis", `<p class="muted-note">🔒 ${t("hiddenFromPatient")}</p>`);
     }
     return card("diagnosis", `
-      ${row("diagnosis", dx.text)}
-      <p style="font-size:13px">${esc(dx.notes)}</p>`);
+      ${block("diagnosis", dx.text)}
+      ${block("clinicalNotes", dx.notes)}`);
   }
   return `
     <form data-form="diagnosis">
@@ -128,11 +183,24 @@ export function diagnosis() {
     </form>`;
 }
 
-/* ---------------- 5. TREATMENT PLAN (+ doctor advice) ---------------- */
+/* ---------------- 5. TREATMENT PLAN (+ advice) ---------------- */
 export function treatment() {
   const d = getData();
   const tr = d.treatment;
-  const adv = d.pathya; // advice do/dont still stored here
+  const adv = d.pathya;
+
+  if (!isDoctor()) {
+    return `
+      ${card("treatmentPlan", `
+        ${row("treatmentBy", tr.by)}
+        ${row("treatmentName", tr.name)}
+        ${row("duration", tr.durationDays)}
+        ${block("therapyInstructions", tr.instructions)}
+      `)}
+      ${card("adviceDo", pillList(ADVICE.do, adv.adviceDo))}
+      ${card("adviceNotDo", pillList(ADVICE.dont, adv.adviceDont, "orange"))}`;
+  }
+
   const docs = CLINIC.doctors.map((x) => ({ value: x.name, label: x.name }));
   const treatOpts = TREATMENTS.map((x) => ({ value: L(x), label: L(x) }));
   return `
@@ -144,7 +212,7 @@ export function treatment() {
       ${field("therapyInstructions", textarea("instructions", tr.instructions))}
     `)}
     ${card("adviceDo", chipSelect("adviceDo",
-      ADVICE.do.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDo), { rawTitle: false })}
+      ADVICE.do.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDo))}
     ${card("adviceNotDo", chipSelect("adviceDont",
       ADVICE.dont.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDont))}
     ${button("saveTreatment", { action: "save-treatment" })}
@@ -154,12 +222,6 @@ export function treatment() {
 /* ---------------- 6. MEDICINES & INTAKE + REFILL ---------------- */
 export function medicine() {
   const d = getData();
-  const foodOpts = [
-    { value: "before", label: t("beforeFood") },
-    { value: "after", label: t("afterFood") },
-  ];
-  const medOpts = MEDICINES.map((m) => ({ value: L(m), label: L(m) }));
-
   const list = d.medicines.map((m) => `
     <div class="med-item">
       <div class="med-head">
@@ -175,8 +237,16 @@ export function medicine() {
       </div>
     </div>`).join("");
 
+  const listCard = card("currentMedicines", list || `<p class="muted-note">${t("none")}</p>`);
+  if (!isDoctor()) return listCard; // patient: view + refill only
+
+  const foodOpts = [
+    { value: "before", label: t("beforeFood") },
+    { value: "after", label: t("afterFood") },
+  ];
+  const medOpts = MEDICINES.map((m) => ({ value: L(m), label: L(m) }));
   return `
-    ${card("currentMedicines", list || `<p class="muted-note">${t("none")}</p>`)}
+    ${listCard}
     <form data-form="medicine">
     ${card("addMedicine", `
       ${field("medicineName", select("name", medOpts, medOpts[0].value))}
@@ -189,7 +259,7 @@ export function medicine() {
     </form>`;
 }
 
-/* ---------------- 7. REMINDERS (kashayam / external / appointment) ---------------- */
+/* ---------------- 7. REMINDERS ---------------- */
 export function reminders() {
   const d = getData();
   const byKind = (kind) => d.reminders.filter((r) => r.kind === kind);
@@ -239,6 +309,13 @@ export function contacts() {
 export function followup() {
   const d = getData();
   const f = d.followup;
+
+  if (!isDoctor()) {
+    return card("followupAppointment", `
+      ${row("followupDate", fmtDate(f.date))}
+      ${row("followupTime", f.time)}`);
+  }
+
   const remOpts = [
     { value: "both", label: t("reminderBoth") },
     { value: "day", label: t("reminderDay") },
@@ -263,7 +340,7 @@ export function review() {
     ${button("maybeLater", { cls: "light", action: "goto-dashboard" })}`);
 }
 
-/* Screen registry: id -> { render, titleKey } */
+/* Screen registry */
 export const SCREENS = {
   dashboard: { render: dashboard, titleKey: "titleDashboard" },
   ads:       { render: ads,       titleKey: "adsTitle" },

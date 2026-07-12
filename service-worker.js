@@ -1,6 +1,6 @@
 /* Service worker — offline-friendly app shell caching.
  * Bump CACHE version whenever you change cached files. */
-const CACHE = "ayusree-v3";
+const CACHE = "ayusree-v5";
 
 const ASSETS = [
   "./",
@@ -13,8 +13,10 @@ const ASSETS = [
   "./js/store.js",
   "./js/screens.js",
   "./js/components.js",
+  "./js/api.js",
   "./config/clinic.config.js",
   "./config/libraries.js",
+  "./config/supabase.config.js",
   "./assets/logo.svg",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
