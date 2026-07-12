@@ -26,8 +26,9 @@ async function authLogin(email, password) {
     method: "POST", headers: { apikey: SUPABASE.anonKey, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  if (!r.ok) throw new Error("login");
-  return r.json();
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error_description || data.msg || data.error_code || data.error || ("HTTP " + r.status));
+  return data;
 }
 async function rest(method, path, opts = {}) {
   const h = headers(opts.prefer ? { Prefer: opts.prefer } : null);
@@ -59,7 +60,7 @@ function wire() {
 
 /* ---------- Login ---------- */
 async function doLogin() {
-  const email = $("email").value.trim(), password = $("password").value;
+  const email = $("email").value.trim().toLowerCase(), password = $("password").value;
   const err = $("login-err"); err.classList.add("hidden");
   const btn = $("login-btn"); btn.disabled = true; btn.textContent = "Logging in…";
   try {
@@ -71,7 +72,7 @@ async function doLogin() {
     persist(); $("password").value = "";
     S.tab = "patients"; showApp();
   } catch (e) {
-    err.textContent = "Wrong email or password."; err.classList.remove("hidden");
+    err.textContent = "Login error: " + (e.message || "unknown"); err.classList.remove("hidden");
   } finally { btn.disabled = false; btn.textContent = "Log in"; }
 }
 function logout() { S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [] }; localStorage.removeItem(LS); showLogin(); }
