@@ -1,6 +1,6 @@
 /* Service worker — offline-friendly app shell caching.
  * Bump CACHE version whenever you change cached files. */
-const CACHE = "ayusree-v5";
+const CACHE = "ayusree-v6";
 
 const ASSETS = [
   "./",
@@ -34,9 +34,14 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-/* Cache-first for app shell, network fallback; runtime-cache new GETs. */
+/* Cache-first for app shell, network fallback; runtime-cache new GETs.
+ * Only same-origin GETs are handled — never cache the Supabase API
+ * (cross-origin) or the admin console (always fresh). */
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;      // skip Supabase & CDNs
+  if (url.pathname.includes("/admin")) return;          // admin always from network
   e.respondWith(
     caches.match(e.request).then((cached) =>
       cached ||
