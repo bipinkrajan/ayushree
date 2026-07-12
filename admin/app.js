@@ -232,6 +232,11 @@ function patientBody(v, d, tr, f) {
         <div class="field"><label>Time</label><input data-f="f_time" type="time" value="${esc(f.time || "")}"></div>
       </div>
       <button class="btn block" data-act="save-followup">Save follow-up</button>
+    </div>
+
+    <div class="card"><h3>Danger zone</h3>
+      <button class="btn danger" data-act="del-patient">Delete this patient</button>
+      <p class="pin-note">Permanently removes the patient and all their records.</p>
     </div>`;
 }
 const medRow = (m) => `<div class="med"><div class="top"><strong>${esc(m.name)}</strong>
@@ -268,6 +273,7 @@ async function onClick(e) {
     "add-reminder": addReminder,
     "del-reminder": () => delReminder(id),
     "save-followup": saveFollowup,
+    "del-patient": deletePatient,
     "add-offer": addOffer,
     "del-offer": () => delOffer(id),
   };
@@ -287,6 +293,12 @@ async function savePatient() {
     await loadPatients(); // refresh count/list cache
     renderPatient();
   }
+}
+async function deletePatient() {
+  if (!S.current.patient.id) return;
+  if (!confirm("Delete this patient and ALL their records permanently? This cannot be undone.")) return;
+  await rest("DELETE", `patients?id=eq.${S.current.patient.id}`);
+  toast("Patient deleted"); S.current = null; await loadPatients();
 }
 async function setPin() {
   const pin = (fields().pin || "").trim(); if (!pin) return toast("Enter a PIN");
