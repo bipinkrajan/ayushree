@@ -5,7 +5,7 @@
 import { CLINIC, applyTheme } from "../config/clinic.config.js";
 import { t, L, getLang, setLang, onLangChange } from "./i18n.js";
 import { getData, update, isDoctor, isLoggedIn, loginWithBundle, logout } from "./store.js";
-import { patientLogin } from "./api.js";
+import { patientLogin, clinicBranding } from "./api.js";
 import { SCREENS } from "./screens.js";
 import { toast } from "./components.js";
 
@@ -17,8 +17,19 @@ function boot() {
   document.documentElement.lang = getLang();
   wireGlobal();
   registerSW();
+  applyBranding();
   onLangChange(() => { paintLogin(); if (isLoggedIn()) { paintChrome(); render(); } });
   if (isLoggedIn()) showApp(); else showLogin();
+}
+
+/* ---------- Branding (loaded from DB, white-label) ---------- */
+async function applyBranding() {
+  const b = await clinicBranding(CLINIC.id);
+  if (!b) return;
+  if (b.name) CLINIC.name = { en: b.name, ml: CLINIC.name.ml || b.name };
+  if (b.review_url) CLINIC.googleReviewUrl = b.review_url;
+  if (b.theme_color) document.documentElement.style.setProperty("--green", b.theme_color);
+  if (b.logo_url) document.querySelectorAll(".login-logo, .brand-logo").forEach((img) => { img.src = b.logo_url; });
 }
 
 /* ---------- Login ---------- */

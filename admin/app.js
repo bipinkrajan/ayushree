@@ -8,8 +8,9 @@ import { CLINIC } from "../config/clinic.config.js";
 import { HEALTH_ISSUES, TREATMENTS, MEDICINES, ADVICE } from "../config/libraries.js";
 
 const LS = "ayusree.admin.v1";
-let S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [],
+let S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [], clinic: null,
   lists: { doctor: [], treatment: [], medicine: [], advice_do: [], advice_dont: [] } };
+let pendingLogo = null;
 
 /* ---------- helpers ---------- */
 const $ = (id) => document.getElementById(id);
@@ -39,6 +40,18 @@ async function rest(method, path, opts = {}) {
   const txt = await r.text(); return txt ? JSON.parse(txt) : null;
 }
 const rpc = (fn, body) => rest("POST", `rpc/${fn}`, { body });
+
+/* Call a Supabase Edge Function (server-side, e.g. manage-staff) */
+async function fnCall(name, body) {
+  const r = await fetch(`${SUPABASE.url}/functions/v1/${name}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE.anonKey, Authorization: "Bearer " + S.token, "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+  return data;
+}
 
 /* ---------- Editable lists (dropdowns saved to DB) ---------- */
 const KIND_LABEL = { doctor: "doctor / therapist", treatment: "treatment", medicine: "medicine", advice_do: "advice (to do)", advice_dont: "advice (not to do)" };
@@ -71,7 +84,12 @@ async function boot() {
   const saved = localStorage.getItem(LS);
   if (saved) { S = Object.assign(S, JSON.parse(saved)); }
   wire();
-  if (S.token) { try { await loadLists(); } catch (_) {} showApp(); } else showLogin();
+  if (S.token) { try { await loadLists(); await loadClinic(); } catch (_) {} showApp(); } else showLogin();
+}
+async function loadClinic() {
+  const rows = await rest("GET", "clinics?select=*");
+  S.clinic = (rows && rows[0]) || null;
+  if (S.clinic && S.clinic.logo_url) document.querySelector(".topbar-logo").src = S.clinic.logo_url;
 }
 function persist() { localStorage.setItem(LS, JSON.stringify({ token: S.token, clinicId: S.clinicId, name: S.name })); }
 
@@ -81,6 +99,8 @@ function wire() {
   $("logout").onclick = logout;
   $("tab-patients").onclick = () => { S.tab = "patients"; S.current = null; showApp(); };
   $("tab-offers").onclick = () => { S.tab = "offers"; showApp(); };
+  $("tab-staff").onclick = () => { S.tab = "staff"; showApp(); };
+  $("tab-branding").onclick = () => { S.tab = "branding"; showApp(); };
   $("view").addEventListener("click", onClick);
   $("view").addEventListener("change", onChange);
 }
@@ -97,7 +117,7 @@ async function doLogin() {
     if (!staff || !staff.length) throw new Error("no staff record");
     S.clinicId = staff[0].clinic_id; S.name = staff[0].name;
     persist(); $("password").value = "";
-    await loadLists();
+    await loadLists(); await loadClinic();
     S.tab = "patients"; showApp();
   } catch (e) {
     err.textContent = "Login error: " + (e.message || "unknown"); err.classList.remove("hidden");
@@ -111,7 +131,11 @@ function showApp() {
   $("who").textContent = S.name || "";
   $("tab-patients").classList.toggle("active", S.tab === "patients");
   $("tab-offers").classList.toggle("active", S.tab === "offers");
+  $("tab-staff").classList.toggle("active", S.tab === "staff");
+  $("tab-branding").classList.toggle("active", S.tab === "branding");
   if (S.tab === "offers") loadOffers();
+  else if (S.tab === "staff") renderStaff();
+  else if (S.tab === "branding") renderBranding();
   else if (S.current) renderPatient();
   else loadPatients();
 }
@@ -145,7 +169,8 @@ function renderList(filter = "") {
 function suggestOp() {
   const y = new Date().getFullYear();
   const seq = String(S.patients.length + 1).padStart(CLINIC.opNumber.seqPadding, "0");
-  return `${CLINIC.opNumber.prefix}-${y}-${seq}`;
+  const prefix = (S.clinic && S.clinic.op_prefix) || CLINIC.opNumber.prefix;
+  return `${prefix}-${y}-${seq}`;
 }
 
 /* ---------- Open / load one patient ---------- */
@@ -222,6 +247,7 @@ function patientBody(v, d, tr, f) {
       <div class="field"><label>History / symptoms</label><textarea data-f="history">${esc(v.history || "")}</textarea></div>
       <div class="field"><label>Medicines / treatments already taken</label><textarea data-f="previous_treatment">${esc(v.previous_treatment || "")}</textarea></div>
       <div class="field"><label>Other health issues</label>${chipRow("other_issues", HEALTH_ISSUES, v.other_issues)}</div>
+      <div class="field"><label>Other (specify) — separate multiple with commas</label><input data-f="other_specify" value="${esc(((v.other_issues) || []).filter((x) => !HEALTH_ISSUES.some((h) => h.id === x)).join(", "))}"></div>
       <button class="btn block" data-act="save-visit">Save current issue</button>
     </div>
 
@@ -294,7 +320,13 @@ function fields() {
 }
 
 /* ---------- click routing ---------- */
-function onChange(e) { /* reserved (image inputs handled in offers) */ if (e.target.dataset && e.target.dataset.act === "offer-image") handleOfferImage(e.target); }
+function onChange(e) {
+  const a = e.target.dataset && e.target.dataset.act;
+  if (a === "offer-image") handleOfferImage(e.target);
+  if (a === "brand-logo" && e.target.files[0]) {
+    compress(e.target.files[0], 600, 0.85).then((url) => { pendingLogo = url; const pv = $("brand-preview"); if (pv) { pv.src = url; pv.classList.remove("hidden"); } });
+  }
+}
 async function onClick(e) {
   const chip = e.target.closest(".chip"); if (chip) { chip.classList.toggle("on"); return; }
   const b = e.target.closest("[data-act]"); if (!b) return;
@@ -317,6 +349,9 @@ async function onClick(e) {
     "add-list": () => addList(b.dataset.kind),
     "add-offer": addOffer,
     "del-offer": () => delOffer(id),
+    "save-branding": saveBranding,
+    "add-staff": addStaff,
+    "del-staff": () => delStaff(id),
   };
   if (map[act]) { e.preventDefault(); try { await map[act](); } catch (err) { toast(err.message.slice(0, 80)); } }
 }
@@ -348,7 +383,9 @@ async function setPin() {
 }
 async function saveVisit() {
   const f = fields();
-  await rest("POST", "visits", { body: { patient_id: S.current.patient.id, issue: f.issue, history: f.history, previous_treatment: f.previous_treatment, other_issues: f.other_issues || [] } });
+  const custom = (f.other_specify || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const other = [...(f.other_issues || []), ...custom];
+  await rest("POST", "visits", { body: { patient_id: S.current.patient.id, issue: f.issue, history: f.history, previous_treatment: f.previous_treatment, other_issues: other } });
   toast("Saved"); await openPatient(S.current.patient.id);
 }
 async function saveDiagnosis() {
@@ -381,6 +418,72 @@ async function saveFollowup() {
   await rest("DELETE", `appointments?patient_id=eq.${pid}&type=eq.followup`);
   await rest("POST", "appointments", { body: { patient_id: pid, date: f.f_date, time: f.f_time, type: "followup", status: "upcoming", reminder_mode: "both" } });
   toast("Saved"); await openPatient(pid);
+}
+
+/* ---------- Branding (white-label settings) ---------- */
+function renderBranding() {
+  const c = S.clinic || {};
+  pendingLogo = null;
+  $("view").innerHTML = `
+    <div class="card"><h3>Clinic branding</h3>
+      <p class="muted">These apply to both the patient app and this admin console. Changes go live after the apps reload.</p>
+      <div class="field"><label>Logo</label>
+        <input type="file" accept="image/*" data-act="brand-logo">
+        <img id="brand-preview" class="offer-img ${c.logo_url ? "" : "hidden"}" src="${esc(c.logo_url || "")}">
+      </div>
+      <div class="row2">
+        <div class="field"><label>Clinic name</label><input data-f="b_name" value="${esc(c.name || "")}"></div>
+        <div class="field"><label>Theme colour</label><input data-f="b_color" type="color" value="${esc(c.theme_color || "#245b35")}"></div>
+        <div class="field"><label>OP number prefix</label><input data-f="b_prefix" value="${esc(c.op_prefix || "AY-OP")}"></div>
+      </div>
+      <div class="field"><label>Google review link</label><input data-f="b_review" value="${esc(c.review_url || "")}"></div>
+      <button class="btn block" data-act="save-branding">Save branding</button>
+    </div>`;
+}
+async function saveBranding() {
+  const f = fields();
+  const body = { name: f.b_name, theme_color: f.b_color, op_prefix: f.b_prefix, review_url: f.b_review };
+  if (pendingLogo) body.logo_url = pendingLogo;
+  await rest("PATCH", `clinics?id=eq.${S.clinicId}`, { body });
+  Object.assign(S.clinic, body);
+  if (pendingLogo) document.querySelector(".topbar-logo").src = pendingLogo;
+  pendingLogo = null;
+  toast("Branding saved");
+}
+
+/* ---------- Staff management (via manage-staff Edge Function) ---------- */
+async function renderStaff() {
+  $("view").innerHTML = `<p class="muted">Loading\u2026</p>`;
+  let staff = [];
+  try { staff = (await fnCall("manage-staff", { action: "list" })).staff || []; }
+  catch (e) { $("view").innerHTML = `<div class="card"><p class="err">${esc(e.message)}</p><p class="muted">If this says Not Found, the manage-staff function is not deployed yet \u2014 see the setup guide.</p></div>`; return; }
+  $("view").innerHTML = `
+    <div class="card"><h3>Staff logins</h3>
+      ${staff.map((s) => `<div class="med"><div class="top"><strong>${esc(s.name)}</strong>
+        ${s.self ? `<span class="muted">you</span>` : `<button class="btn danger sm" data-act="del-staff" data-id="${s.id}">Remove</button>`}</div>
+        <div class="muted">${esc(s.email)} \u00b7 ${esc(s.role)}</div></div>`).join("") || `<p class="muted">No staff yet.</p>`}
+    </div>
+    <div class="card"><h3>Add staff login</h3>
+      <div class="row2">
+        <div class="field"><label>Full name</label><input data-f="st_name"></div>
+        <div class="field"><label>Email</label><input data-f="st_email" type="email"></div>
+        <div class="field"><label>Password (6+ characters)</label><input data-f="st_pass"></div>
+        <div class="field"><label>Role</label><select data-f="st_role"><option value="admin">Admin (full access)</option><option value="doctor">Doctor / staff</option></select></div>
+      </div>
+      <button class="btn block" data-act="add-staff">Create staff login</button>
+      <p class="pin-note">They log in at ayu-sree.in/admin/ with this email + password.</p>
+    </div>`;
+}
+async function addStaff() {
+  const f = fields();
+  if (!f.st_email || !f.st_pass) { toast("Enter email and password"); return; }
+  await fnCall("manage-staff", { action: "create", email: f.st_email, password: f.st_pass, name: f.st_name, role: f.st_role });
+  toast("Staff added"); renderStaff();
+}
+async function delStaff(id) {
+  if (!confirm("Remove this staff login?")) return;
+  await fnCall("manage-staff", { action: "delete", staff_id: id });
+  toast("Removed"); renderStaff();
 }
 
 /* ---------- Offers ---------- */

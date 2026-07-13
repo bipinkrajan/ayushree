@@ -19,6 +19,12 @@ async function rpc(fn, body) {
   return res.json();
 }
 
+/* Public: fetch a clinic's branding (name, logo, colour, review link) */
+export async function clinicBranding(slug) {
+  try { return await rpc("clinic_branding", { p_slug: slug }); }
+  catch (_) { return null; }
+}
+
 /* Returns the patient bundle, or throws {code:'invalid'|'network'} */
 export async function patientLogin(op, pin) {
   let data;
