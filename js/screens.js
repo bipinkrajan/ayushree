@@ -140,7 +140,7 @@ import{t as o,L as c,getLang as k}from"./i18n.js";import{getData as u,isDoctor a
     </form>`}function S(){const t=u(),e=d=>t.reminders.filter($=>$.kind===d),a=d=>d.length?d.map($=>i($.time,$.label,!0)).join(""):`<p class="muted-note">${o("none")}</p>`;return`
     ${n("enableNotifications",`
       <p class="muted-note" id="notif-status"></p>
-      ${p("enableNotifications",{action:"enable-notif",cls:"light"})}
+      ${p("enableNotifications",{action:"toggle-notif",cls:"light",attrs:'id="notif-toggle"'})}
     `)}
     ${n("todaysReminders",a(t.reminders))}
     ${g.features.kashayamReminders&&e("kashayam").length?n("kashayamReminders",a(e("kashayam"))):""}
