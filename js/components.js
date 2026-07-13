@@ -1,66 +1,16 @@
-/* =============================================================
- * COMPONENTS — small reusable UI builders (return HTML strings)
- * Keeps screens declarative and consistent.
- * ============================================================= */
-import { t } from "./i18n.js";
-
-/* Escape user text for safe HTML injection */
-export function esc(s = "") {
-  return String(s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
-export const card = (titleKey, bodyHtml, opts = {}) => `
-  <div class="card ${opts.cls || ""}">
-    ${titleKey ? `<div class="card-title">${opts.rawTitle ? titleKey : t(titleKey)}</div>` : ""}
-    ${bodyHtml}
-  </div>`;
-
-export const row = (labelKey, value, raw = false) => `
-  <div class="row"><span class="label">${raw ? labelKey : t(labelKey)}</span>
-  <span class="value">${esc(value)}</span></div>`;
-
-export const pill = (text, tone = "") => `<span class="pill ${tone}">${esc(text)}</span>`;
-
-export const field = (labelKey, inputHtml) => `
-  <div class="field"><label>${t(labelKey)}</label>${inputHtml}</div>`;
-
-export const input = (name, value = "", type = "text") =>
-  `<input name="${name}" type="${type}" value="${esc(value)}">`;
-
-export const textarea = (name, value = "") =>
-  `<textarea name="${name}">${esc(value)}</textarea>`;
-
-export const select = (name, options, selected) => `
-  <select name="${name}">
-    ${options.map((o) => `<option value="${esc(o.value)}" ${o.value === selected ? "selected" : ""}>${esc(o.label)}</option>`).join("")}
-  </select>`;
-
-export const button = (labelKey, opts = {}) =>
-  `<button class="btn ${opts.cls || ""}" ${opts.attrs || ""} ${opts.action ? `data-action="${opts.action}"` : ""}>${opts.raw ? labelKey : t(labelKey)}</button>`;
-
-/* Multi-select chips list (for other issues / pathya / advice) */
-export const chipSelect = (name, options, selectedIds = []) => `
-  <div class="chips" data-chipselect="${name}">
-    ${options.map((o) => `
-      <button type="button" class="chip ${selectedIds.includes(o.id) ? "on" : ""}" data-id="${o.id}">${esc(o.label)}</button>
+import{t as o}from"./i18n.js";function s(e=""){return String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}const n=(e,t,a={})=>`
+  <div class="card ${a.cls||""}">
+    ${e?`<div class="card-title">${a.rawTitle?e:o(e)}</div>`:""}
+    ${t}
+  </div>`,i=(e,t,a=!1)=>`
+  <div class="row"><span class="label">${a?e:o(e)}</span>
+  <span class="value">${s(t)}</span></div>`,d=(e,t="")=>`<span class="pill ${t}">${s(e)}</span>`,r=(e,t)=>`
+  <div class="field"><label>${o(e)}</label>${t}</div>`,p=(e,t="",a="text")=>`<input name="${e}" type="${a}" value="${s(t)}">`,$=(e,t="")=>`<textarea name="${e}">${s(t)}</textarea>`,u=(e,t,a)=>`
+  <select name="${e}">
+    ${t.map(c=>`<option value="${s(c.value)}" ${c.value===a?"selected":""}>${s(c.label)}</option>`).join("")}
+  </select>`,v=(e,t={})=>`<button class="btn ${t.cls||""}" ${t.attrs||""} ${t.action?`data-action="${t.action}"`:""}>${t.raw?e:o(e)}</button>`,x=(e,t,a=[])=>`
+  <div class="chips" data-chipselect="${e}">
+    ${t.map(c=>`
+      <button type="button" class="chip ${a.includes(c.id)?"on":""}" data-id="${c.id}">${s(c.label)}</button>
     `).join("")}
-  </div>`;
-
-/* Doctor-only banner */
-export const doctorOnly = () => `<div class="doctor-only">${t("doctorOnly")}</div>`;
-
-/* Toast helper */
-export function toast(msg) {
-  let el = document.getElementById("toast");
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "toast";
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove("show"), 1800);
-}
+  </div>`,m=()=>`<div class="doctor-only">${o("doctorOnly")}</div>`;function b(e){let t=document.getElementById("toast");t||(t=document.createElement("div"),t.id="toast",document.body.appendChild(t)),t.textContent=e,t.classList.add("show"),clearTimeout(t._t),t._t=setTimeout(()=>t.classList.remove("show"),1800)}export{v as button,n as card,x as chipSelect,m as doctorOnly,s as esc,r as field,p as input,d as pill,i as row,u as select,$ as textarea,b as toast};
