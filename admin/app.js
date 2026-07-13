@@ -8,7 +8,8 @@ import { CLINIC } from "../config/clinic.config.js";
 import { HEALTH_ISSUES, TREATMENTS, MEDICINES, ADVICE } from "../config/libraries.js";
 
 const LS = "ayusree.admin.v1";
-let S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [] };
+let S = { token: null, clinicId: null, name: "", tab: "patients", patients: [], current: null, offers: [],
+  lists: { doctor: [], treatment: [], medicine: [], advice_do: [], advice_dont: [] } };
 
 /* ---------- helpers ---------- */
 const $ = (id) => document.getElementById(id);
@@ -39,12 +40,38 @@ async function rest(method, path, opts = {}) {
 }
 const rpc = (fn, body) => rest("POST", `rpc/${fn}`, { body });
 
+/* ---------- Editable lists (dropdowns saved to DB) ---------- */
+const KIND_LABEL = { doctor: "doctor / therapist", treatment: "treatment", medicine: "medicine", advice_do: "advice (to do)", advice_dont: "advice (not to do)" };
+async function loadLists() {
+  const rows = await rest("GET", "lists?select=kind,label&order=label.asc");
+  const g = { doctor: [], treatment: [], medicine: [], advice_do: [], advice_dont: [] };
+  (rows || []).forEach((r) => { if (g[r.kind]) g[r.kind].push({ label: r.label }); });
+  S.lists = g;
+}
+async function addList(kind) {
+  const label = (prompt("Add new " + (KIND_LABEL[kind] || kind) + ":") || "").trim();
+  if (!label) return;
+  try { await rest("POST", "lists", { body: { clinic_id: S.clinicId, kind, label } }); }
+  catch (e) { /* likely duplicate — ignore */ }
+  if (!S.lists[kind].some((l) => l.label === label)) S.lists[kind].push({ label });
+  // live-update any dropdown of this kind
+  document.querySelectorAll(`select[data-listkind="${kind}"]`).forEach((sel) => {
+    const o = document.createElement("option"); o.textContent = label; sel.appendChild(o); sel.value = label;
+  });
+  // live-update any advice chip group of this kind
+  document.querySelectorAll(`.chips[data-listkind="${kind}"]`).forEach((cs) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip on";
+    b.dataset.id = label; b.textContent = label; cs.appendChild(b);
+  });
+  toast("Added");
+}
+
 /* ---------- Boot ---------- */
-function boot() {
+async function boot() {
   const saved = localStorage.getItem(LS);
   if (saved) { S = Object.assign(S, JSON.parse(saved)); }
   wire();
-  if (S.token) showApp(); else showLogin();
+  if (S.token) { try { await loadLists(); } catch (_) {} showApp(); } else showLogin();
 }
 function persist() { localStorage.setItem(LS, JSON.stringify({ token: S.token, clinicId: S.clinicId, name: S.name })); }
 
@@ -70,6 +97,7 @@ async function doLogin() {
     if (!staff || !staff.length) throw new Error("no staff record");
     S.clinicId = staff[0].clinic_id; S.name = staff[0].name;
     persist(); $("password").value = "";
+    await loadLists();
     S.tab = "patients"; showApp();
   } catch (e) {
     err.textContent = "Login error: " + (e.message || "unknown"); err.classList.remove("hidden");
@@ -147,6 +175,19 @@ function chipRow(name, list, selected) {
   return `<div class="chips" data-chips="${name}">${list.map((x) =>
     `<button type="button" class="chip ${(selected || []).includes(x.id) ? "on" : ""}" data-id="${x.id}">${esc(x.en)}</button>`).join("")}</div>`;
 }
+/* dropdown backed by an editable DB list, with a ＋ Add button */
+function listSel(name, kind, val) {
+  const opts = (S.lists[kind] || []).map((l) => `<option ${l.label === val ? "selected" : ""}>${esc(l.label)}</option>`).join("");
+  return `<div class="addrow"><select data-f="${name}" data-listkind="${kind}"><option value=""></option>${opts}</select>`
+    + `<button type="button" class="btn sm light" data-act="add-list" data-kind="${kind}">＋</button></div>`;
+}
+/* advice chips backed by an editable DB list (stores the label text) */
+function adviceChips(name, kind, selected) {
+  const items = S.lists[kind] || [];
+  return `<div class="chips" data-chips="${name}" data-listkind="${kind}">${items.map((l) =>
+    `<button type="button" class="chip ${(selected || []).includes(l.label) ? "on" : ""}" data-id="${esc(l.label)}">${esc(l.label)}</button>`).join("")}</div>`
+    + `<button type="button" class="btn sm light" data-act="add-list" data-kind="${kind}" style="margin-top:6px">＋ Add advice</button>`;
+}
 function renderPatient() {
   const c = S.current, p = c.patient, v = c.visit, d = c.diagnosis, tr = c.treatment, f = c.followup;
   const opts = (arr, val, key = "en") => arr.map((x) => `<option ${((x[key]) === val) ? "selected" : ""}>${esc(x[key])}</option>`).join("");
@@ -193,20 +234,20 @@ function patientBody(v, d, tr, f) {
 
     <div class="card"><h3>Treatment plan</h3>
       <div class="row2">
-        <div class="field"><label>Suggested by</label><select data-f="tr_by">${CLINIC.doctors.map((x) => `<option ${x.name === tr.by_doctor ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></div>
-        <div class="field"><label>Treatment</label><select data-f="tr_name"><option value=""></option>${TREATMENTS.map((x) => `<option ${x.en === tr.name ? "selected" : ""}>${esc(x.en)}</option>`).join("")}</select></div>
+        <div class="field"><label>Suggested by (doctor / therapist)</label>${listSel("tr_by", "doctor", tr.by_doctor)}</div>
+        <div class="field"><label>Treatment</label>${listSel("tr_name", "treatment", tr.name)}</div>
         <div class="field"><label>Duration (days)</label><input data-f="tr_days" type="number" value="${esc(tr.duration_days || 30)}"></div>
       </div>
       <div class="field"><label>Therapy instructions</label><textarea data-f="tr_instr">${esc(tr.instructions || "")}</textarea></div>
-      <div class="field"><label>Advice — what to do</label>${chipRow("advice_do", ADVICE.do, tr.advice_do)}</div>
-      <div class="field"><label>Advice — what not to do</label>${chipRow("advice_dont", ADVICE.dont, tr.advice_dont)}</div>
+      <div class="field"><label>Advice — what to do</label>${adviceChips("advice_do", "advice_do", tr.advice_do)}</div>
+      <div class="field"><label>Advice — what not to do</label>${adviceChips("advice_dont", "advice_dont", tr.advice_dont)}</div>
       <button class="btn block" data-act="save-treatment">Save treatment</button>
     </div>
 
     <div class="card"><h3>Medicines</h3>
       <div id="medlist">${(S.current.medicines || []).map(medRow).join("") || `<p class="muted">None yet.</p>`}</div>
       <div class="row2">
-        <div class="field"><label>Medicine</label><select data-f="m_name">${MEDICINES.map((x) => `<option>${esc(x.en)}</option>`).join("")}</select></div>
+        <div class="field"><label>Medicine</label>${listSel("m_name", "medicine", "")}</div>
         <div class="field"><label>Timing</label><input data-f="m_timing" placeholder="7:00 AM, 7:00 PM"></div>
         <div class="field"><label>Dosage</label><input data-f="m_dosage" placeholder="15 ml with warm water"></div>
         <div class="field"><label>Before / after food</label><select data-f="m_food"><option value="before">Before food</option><option value="after">After food</option></select></div>
@@ -220,8 +261,7 @@ function patientBody(v, d, tr, f) {
       <div id="remlist">${(S.current.reminders || []).map(remRow).join("") || `<p class="muted">None yet.</p>`}</div>
       <div class="row2">
         <div class="field"><label>Time</label><input data-f="r_time" type="time"></div>
-        <div class="field"><label>Label</label><input data-f="r_label" placeholder="Kashayam"></div>
-        <div class="field"><label>Type</label><select data-f="r_kind"><option value="kashayam">Kashayam</option><option value="medicine">Medicine</option><option value="external">External application</option></select></div>
+        <div class="field"><label>Medicine / item (from your medicines)</label>${listSel("r_med", "medicine", "")}</div>
       </div>
       <button class="btn light" data-act="add-reminder">+ Add reminder</button>
     </div>
@@ -274,6 +314,7 @@ async function onClick(e) {
     "del-reminder": () => delReminder(id),
     "save-followup": saveFollowup,
     "del-patient": deletePatient,
+    "add-list": () => addList(b.dataset.kind),
     "add-offer": addOffer,
     "del-offer": () => delOffer(id),
   };
@@ -327,8 +368,11 @@ async function addMedicine() {
 }
 async function delMedicine(id) { await rest("DELETE", `medicines?id=eq.${id}`); toast("Removed"); await openPatient(S.current.patient.id); }
 async function addReminder() {
-  const f = fields(); if (!f.r_time) return;
-  await rest("POST", "reminders", { body: { patient_id: S.current.patient.id, time: f.r_time, label: f.r_label, kind: f.r_kind } });
+  const f = fields(); if (!f.r_time || !f.r_med) return;
+  const label = f.r_med;
+  const low = label.toLowerCase();
+  const kind = /thailam|oil|external|lepam/.test(low) ? "external" : /kashayam/.test(low) ? "kashayam" : "medicine";
+  await rest("POST", "reminders", { body: { patient_id: S.current.patient.id, time: f.r_time, label, kind } });
   toast("Added"); await openPatient(S.current.patient.id);
 }
 async function delReminder(id) { await rest("DELETE", `reminders?id=eq.${id}`); toast("Removed"); await openPatient(S.current.patient.id); }

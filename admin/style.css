@@ -59,6 +59,8 @@ textarea{ min-height:60px; resize:vertical; }
 .pitem .op{ font-weight:700; color:var(--green); }
 .pitem .meta{ margin-left:auto; font-size:12px; color:var(--muted); text-align:right; }
 
+.addrow{ display:flex; gap:8px; align-items:center; }
+.addrow select{ flex:1; }
 .chips{ display:flex; flex-wrap:wrap; gap:8px; }
 .chip{ border:1px solid var(--border); background:#fff; color:var(--text); border-radius:999px;
   padding:6px 12px; font-size:13px; cursor:pointer; }

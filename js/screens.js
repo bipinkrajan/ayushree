@@ -272,10 +272,11 @@ export function reminders() {
       <p class="muted-note" id="notif-status"></p>
       ${button("enableNotifications", { action: "enable-notif", cls: "light" })}
     `)}
-    ${CLINIC.features.kashayamReminders ? card("kashayamReminders", rList(byKind("kashayam"))) : ""}
-    ${CLINIC.features.externalApplication ? card("externalApplication", rList(byKind("external"))) : ""}
+    ${card("todaysReminders", rList(d.reminders))}
+    ${CLINIC.features.kashayamReminders && byKind("kashayam").length ? card("kashayamReminders", rList(byKind("kashayam"))) : ""}
+    ${CLINIC.features.externalApplication && byKind("external").length ? card("externalApplication", rList(byKind("external"))) : ""}
     ${card("appointmentReminder", d.appointments.map((a) =>
-      row(fmtDate(a.date), a.time, true)).join(""))}`;
+      row(fmtDate(a.date), a.time, true)).join("") || `<p class="muted-note">${t("none")}</p>`)}`;
 }
 
 /* ---------------- 8. CONTACTS ---------------- */
