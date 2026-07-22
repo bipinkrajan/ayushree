@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" translate="no">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="google" content="notranslate" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#245b35" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,7 +12,7 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body class="notranslate">
+<body>
   <!-- ===== Login screen (shown when logged out) ===== -->
   <div id="login-screen" class="login-screen">
     <div class="login-card">
@@ -81,7 +80,6 @@
       <button data-screen="treatment"><span class="menu-label">Treatment</span></button>
       <button data-screen="medicine"><span class="menu-label">Medicines</span></button>
       <button data-screen="reminders"><span class="menu-label">Reminders</span></button>
-      <button data-screen="tests"><span class="menu-label">Tests to Be Done</span></button>
       <button data-screen="contacts"><span class="menu-label">Contacts</span></button>
       <button data-screen="followup"><span class="menu-label">Follow-up</span></button>
       <button data-screen="review"><span class="menu-label">Review</span></button>
@@ -93,12 +91,10 @@
   <div id="alarm" class="alarm hidden" role="dialog" aria-modal="true">
     <button id="alarm-close" class="alarm-x" aria-label="Close">×</button>
     <div class="alarm-card">
-      <img class="alarm-logo" src="assets/logo.svg" alt="Ayu:sree" />
+      <div class="alarm-leaf">🌿</div>
       <div class="alarm-title" id="alarm-title">Reminder</div>
-      <div class="alarm-message" id="alarm-message"></div>
       <div class="alarm-label" id="alarm-label"></div>
       <div class="alarm-time" id="alarm-time"></div>
-      <div class="alarm-details" id="alarm-details"></div>
       <button class="btn alarm-done" id="alarm-done">Done</button>
     </div>
   </div>

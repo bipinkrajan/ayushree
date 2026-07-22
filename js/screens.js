@@ -1,197 +1,374 @@
-import{t as i,L as m,getLang as k}from"./i18n.js";import{getData as u,isDoctor as v}from"./store.js";import{CLINIC as b}from"../config/clinic.config.js";import{HEALTH_ISSUES as T,TREATMENTS as K,MEDICINES as P,ADVICE as w,LAB_TESTS as F}from"../config/libraries.js";import{card as n,row as s,pill as D,field as d,input as p,textarea as f,select as h,button as $,chipSelect as x,doctorOnly as R,esc as c}from"./components.js";const g=t=>t?new Date(t+(t.length===10?"T00:00:00":"")).toLocaleDateString(k()==="ml"?"ml-IN":"en-GB",{day:"2-digit",month:"short",year:"numeric"}):"-",N=(t,e)=>{const a=t.find(o=>o.id===e);return a?m(a):e},y=(t,e)=>`<div class="ro-block"><div class="ro-label">${i(t)}</div><div class="ro-text">${c(e||"-")}</div></div>`,I=(t,e,a="")=>e&&e.length?e.map(o=>D(N(t,o),a)).join(""):`<span class="muted-note">${i("none")}</span>`;export function dashboard(){const t=u(),e=t.patient,a=t.treatment.durationDays,o=t.progress.completedDays,l=t.currentIssue.otherIssues.map(r=>N(T,r));return`
-    ${n("opNumber",`<div class="op-number">${c(e.opNumber)}</div>`,{cls:"op-card"})}
-    ${n("patientOverview",`
-      ${s("name",e.name)}
-      ${s("age",e.age)}
-      ${s("mobile",e.mobile)}
-      ${s("address",e.address)}
-      ${s("joined",g(e.joined))}
-      ${s("lastVisit",g(e.lastVisit))}
+/* =============================================================
+ * SCREENS — one render() function per screen.
+ * Doctor role = editable forms. Patient role = read-only views
+ * (admin fills records during the visit). Interactivity wired in
+ * app.js via event delegation + data-action attributes.
+ * ============================================================= */
+import { t, L, getLang } from "./i18n.js";
+import { getData, isDoctor } from "./store.js";
+import { CLINIC } from "../config/clinic.config.js";
+import { HEALTH_ISSUES, TREATMENTS, MEDICINES, ADVICE } from "../config/libraries.js";
+import {
+  card, row, pill, field, input, textarea, select, button,
+  chipSelect, doctorOnly, esc,
+} from "./components.js";
+
+const fmtDate = (iso) => {
+  if (!iso) return "-";
+  const d = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
+  return d.toLocaleDateString(getLang() === "ml" ? "ml-IN" : "en-GB",
+    { day: "2-digit", month: "short", year: "numeric" });
+};
+const labelFor = (list, id) => { const x = list.find((i) => i.id === id); return x ? L(x) : id; };
+
+/* read-only labelled text block (for long fields) */
+const block = (labelKey, text) =>
+  `<div class="ro-block"><div class="ro-label">${t(labelKey)}</div><div class="ro-text">${esc(text || "-")}</div></div>`;
+/* read-only pills from a library id list */
+const pillList = (list, ids, tone = "") =>
+  (ids && ids.length) ? ids.map((id) => pill(labelFor(list, id), tone)).join("") : `<span class="muted-note">${t("none")}</span>`;
+
+/* ---------------- 1. DASHBOARD ---------------- */
+export function dashboard() {
+  const d = getData();
+  const p = d.patient;
+  const total = d.treatment.durationDays;
+  const done = d.progress.completedDays;
+  const issues = d.currentIssue.otherIssues.map((id) => labelFor(HEALTH_ISSUES, id));
+
+  const MOODS = [
+    { key: "love", emoji: "❤️", labelKey: "moodLove" },
+    { key: "happy", emoji: "😊", labelKey: "moodHappy" },
+    { key: "sad", emoji: "😢", labelKey: "moodSad" },
+  ];
+  const moodToday = d.mood && d.mood.today;
+  const moodCard = card("moodTitle", `
+    <div class="mood-row">
+      ${MOODS.map((m) => `
+        <button type="button" class="mood-btn ${moodToday === m.key ? "on" : ""}" data-action="mood" data-mood="${m.key}">
+          <span class="mood-emoji">${m.emoji}</span>
+          <span class="mood-lbl">${t(m.labelKey)}</span>
+        </button>`).join("")}
+    </div>
+    <div class="mood-note">${moodToday ? t("moodSharedNote") : t("moodPrompt")}</div>
+  `, { cls: "mood-card" });
+
+  return `
+    ${card("opNumber", `<div class="op-number">${esc(p.opNumber)}</div>`, { cls: "op-card" })}
+    ${moodCard}
+    ${card("patientOverview", `
+      ${row("name", p.name)}
+      ${row("age", p.age)}
+      ${row("mobile", p.mobile)}
+      ${row("address", p.address)}
+      ${row("joined", fmtDate(p.joined))}
+      ${row("lastVisit", fmtDate(p.lastVisit))}
     `)}
-    ${n("latestHealth",`
-      ${D(t.currentIssue.issue,"red")}
-      ${l.map(r=>D(r,"orange")).join("")}
-      ${s("treatmentJourney",`${i("day")} ${o} ${i("of")} ${a}`,!0)}
-      <div class="progress"><div class="progress-bar" style="width:${Math.round(o/a*100)}%"></div></div>
+    ${card("latestHealth", `
+      ${pill(d.currentIssue.issue, "red")}
+      ${issues.map((i) => pill(i, "orange")).join("")}
+      ${row("treatmentJourney", `${t("day")} ${done} ${t("of")} ${total}`, true)}
+      <div class="progress"><div class="progress-bar" style="width:${Math.round(done/total*100)}%"></div></div>
     `)}
-    ${n("todaysReminders",`
-      ${t.reminders.map(r=>s(r.time,r.label,!0)).join("")}
-      ${$("markComplete",{action:"mark-complete"})}
+    ${card("todaysReminders", `
+      ${d.reminders.map((r) => row(r.time, r.label, true)).join("")}
+      ${button("markComplete", { action: "mark-complete" })}
     `)}
-    ${n("nextFollowup",`
-      ${s("date",g(t.followup.date))}
-      ${s("time",t.followup.time)}
-      ${$("viewAppointment",{cls:"light",action:"goto-followup"})}
-    `)}`}function B(t){const e=v();return`
+    ${card("nextFollowup", `
+      ${row("date", fmtDate(d.followup.date))}
+      ${row("time", d.followup.time)}
+      ${button("viewAppointment", { cls: "light", action: "goto-followup" })}
+    `)}`;
+}
+
+/* ---------------- 2. ADS / OFFERS (view + share; doctor can add) ---------------- */
+function flyerHtml(a) {
+  const doc = isDoctor();
+  const media = a.image
+    ? `<img class="flyer-img" src="${esc(a.image)}" alt="">`
+    : `<div class="flyer-banner" style="background:${esc(a.color || "#245b35")}">
+         ${a.badge ? `<span class="flyer-badge">${esc(L(a.badge))}</span>` : ""}
+         <div class="flyer-title">${esc(L(a.title))}</div>
+       </div>`;
+  return `
     <div class="flyer">
-      ${t.image?`<img class="flyer-img" src="${c(t.image)}" alt="">`:`<div class="flyer-banner" style="background:${c(t.color||"#245b35")}">
-         ${t.badge?`<span class="flyer-badge">${c(m(t.badge))}</span>`:""}
-         <div class="flyer-title">${c(m(t.title))}</div>
-       </div>`}
+      ${media}
       <div class="flyer-body">
-        ${t.image?`<div class="flyer-title dark">${c(m(t.title))}</div>`:""}
-        <p>${c(m(t.body))}</p>
+        ${a.image ? `<div class="flyer-title dark">${esc(L(a.title))}</div>` : ""}
+        <p>${esc(L(a.body))}</p>
         <div class="flyer-actions">
-          <button class="btn small orange" data-action="share-ad" data-id="${t.id}"><span class="share-ic">\u2934</span> ${i("share")}</button>
-          ${e?`<button class="btn small light" data-action="delete-ad" data-id="${t.id}">${i("remove")}</button>`:""}
+          <button class="btn small orange" data-action="share-ad" data-id="${a.id}"><span class="share-ic">⤴</span> ${t("share")}</button>
+          ${doc ? `<button class="btn small light" data-action="delete-ad" data-id="${a.id}">${t("remove")}</button>` : ""}
         </div>
       </div>
-    </div>`}export function ads(){const t=u(),e=t.ads&&t.ads.length?`<div class="flyers">${t.ads.map(B).join("")}</div>`:`<p class="muted-note">${i("none")}</p>`,a=v()?`
+    </div>`;
+}
+
+export function ads() {
+  const d = getData();
+  const list = (d.ads && d.ads.length)
+    ? `<div class="flyers">${d.ads.map(flyerHtml).join("")}</div>`
+    : `<p class="muted-note">${t("none")}</p>`;
+
+  // doctor/admin: add-offer form with image upload
+  const addForm = isDoctor() ? `
     <form data-form="newad">
-    ${n("addOffer",`
+    ${card("addOffer", `
       <div class="field">
-        <label>${i("offerImage")}</label>
+        <label>${t("offerImage")}</label>
         <input type="file" accept="image/*" name="image" id="ad-image">
         <img id="ad-preview" class="ad-preview hidden" alt="">
       </div>
-      ${d("offerHeader",p("title",""))}
-      ${d("offerText",f("body",""))}
-      ${$("publishOffer",{action:"publish-ad"})}
+      ${field("offerHeader", input("title", ""))}
+      ${field("offerText", textarea("body", ""))}
+      ${button("publishOffer", { action: "publish-ad" })}
     `)}
-    </form>`:"";return e+a}export function visit(){const t=u(),e=t.patient,a=t.health||{},o=t.currentIssue;return v()?`
+    </form>` : "";
+
+  return list + addForm;
+}
+
+/* ---------------- 3. REGISTRATION / VISIT ---------------- */
+export function visit() {
+  const d = getData();
+  const p = d.patient;
+  const ci = d.currentIssue;
+
+  if (!isDoctor()) {
+    return `
+      ${card("patientOverview", `
+        ${row("opNumber", p.opNumber)}
+        ${row("name", p.name)}
+        ${row("age", p.age)}
+        ${row("mobileNumber", p.mobile)}
+        ${row("address", p.address)}
+        ${row("referredBy", p.referredBy)}
+      `)}
+      ${card("currentHealthIssue", `
+        ${row("issue", ci.issue)}
+        ${block("history", ci.history)}
+        ${block("previousTreatment", ci.previousTreatment)}
+        <div class="ro-label">${t("otherIssues")}</div>
+        <div>${pillList(HEALTH_ISSUES, ci.otherIssues, "orange")}</div>
+      `)}`;
+  }
+
+  return `
     <form data-form="visit">
-    ${n("patientOverview",`
-      ${d("opNumber",p("opNumber",e.opNumber))}
-      ${d("name",p("name",e.name))}
-      ${d("age",p("age",e.age,"number"))}
-      ${d("mobileNumber",p("mobile",e.mobile))}
-      ${d("address",f("address",e.address))}
-      ${d("referredBy",p("referredBy",e.referredBy))}
+    ${card("patientOverview", `
+      ${field("opNumber", input("opNumber", p.opNumber))}
+      ${field("name", input("name", p.name))}
+      ${field("age", input("age", p.age, "number"))}
+      ${field("mobileNumber", input("mobile", p.mobile))}
+      ${field("address", textarea("address", p.address))}
+      ${field("referredBy", input("referredBy", p.referredBy))}
     `)}
-    ${n("currentHealthIssue",`
-      ${d("issue",p("issue",o.issue))}
-      ${d("history",f("history",o.history))}
-      ${d("previousTreatment",f("previousTreatment",o.previousTreatment))}
-      ${d("otherIssues",x("otherIssues",T.map(l=>({id:l.id,label:m(l)})),o.otherIssues))}
-      ${$("saveVisit",{action:"save-visit"})}
+    ${card("currentHealthIssue", `
+      ${field("issue", input("issue", ci.issue))}
+      ${field("history", textarea("history", ci.history))}
+      ${field("previousTreatment", textarea("previousTreatment", ci.previousTreatment))}
+      ${field("otherIssues", chipSelect("otherIssues",
+        HEALTH_ISSUES.map((i) => ({ id: i.id, label: L(i) })), ci.otherIssues))}
+      ${button("saveVisit", { action: "save-visit" })}
     `)}
-    </form>`:`
-      ${n("patientOverview",`
-        ${s("opNumber",e.opNumber)}
-        ${s("name",e.name)}
-        ${s("age",e.age)}
-        ${s("mobileNumber",e.mobile)}
-        ${s("address",e.address)}
-        ${s("referredBy",e.referredBy)}
-      `)}
-      ${n("healthInformation",`
-        ${s("height",a.heightCm===""?"":`${a.heightCm} cm`)}
-        ${s("weight",a.weightKg===""?"":`${a.weightKg} kg`)}
-        ${s("bodyFat",a.bodyFatPct===""?"":`${a.bodyFatPct}%`)}
-        ${s("visceralFat",a.visceralFat)}
-        ${s("bmr",a.bmrKcal===""?"":`${a.bmrKcal} kcal/day`)}
-        ${s("bmi",a.bmi)}
-        ${s("bodyWater",a.waterPct===""?"":`${a.waterPct}%`)}
-        ${s("protein",a.proteinPct===""?"":`${a.proteinPct}%`)}
-      `)}
-      ${n("currentHealthIssue",`
-        ${s("issue",o.issue)}
-        ${y("history",o.history)}
-        ${y("previousTreatment",o.previousTreatment)}
-        <div class="ro-label">${i("otherIssues")}</div>
-        <div>${I(T,o.otherIssues,"orange")}</div>
-      `)}`}export function diagnosis(){const e=u().diagnosis;return v()?`
+    </form>`;
+}
+
+/* ---------------- 4. DIAGNOSIS (doctor-only) ---------------- */
+export function diagnosis() {
+  const d = getData();
+  const dx = d.diagnosis;
+  if (!isDoctor()) {
+    if (!dx.sharedWithPatient) {
+      return card("diagnosis", `<p class="muted-note">🔒 ${t("hiddenFromPatient")}</p>`);
+    }
+    return card("diagnosis", `
+      ${block("diagnosis", dx.text)}
+      ${block("clinicalNotes", dx.notes)}`);
+  }
+  return `
     <form data-form="diagnosis">
-    ${n("diagnosis",`
-      ${R()}
-      ${d("diagnosis",f("text",e.text))}
-      ${d("clinicalNotes",f("notes",e.notes))}
+    ${card("diagnosis", `
+      ${doctorOnly()}
+      ${field("diagnosis", textarea("text", dx.text))}
+      ${field("clinicalNotes", textarea("notes", dx.notes))}
       <label class="switch-row">
-        <input type="checkbox" name="sharedWithPatient" ${e.sharedWithPatient?"checked":""}>
-        <span>${i("shareWithPatient")}</span>
+        <input type="checkbox" name="sharedWithPatient" ${dx.sharedWithPatient ? "checked" : ""}>
+        <span>${t("shareWithPatient")}</span>
       </label>
-      ${$("saveDiagnosis",{action:"save-diagnosis"})}
+      ${button("saveDiagnosis", { action: "save-diagnosis" })}
     `)}
-    </form>`:e.sharedWithPatient?n("diagnosis",`
-      ${y("diagnosis",e.text)}
-      ${y("clinicalNotes",e.notes)}`):n("diagnosis",`<p class="muted-note">\u{1F512} ${i("hiddenFromPatient")}</p>`)}export function treatment(){const t=u(),e=t.treatment,a=t.pathya;if(!v())return`
-      ${n("treatmentPlan",`
-        ${s("treatmentBy",e.by)}
-        ${s("treatmentName",e.name)}
-        ${s("duration",e.durationDays)}
-        ${y("therapyInstructions",e.instructions)}
+    </form>`;
+}
+
+/* ---------------- 5. TREATMENT PLAN (+ advice) ---------------- */
+export function treatment() {
+  const d = getData();
+  const tr = d.treatment;
+  const adv = d.pathya;
+
+  if (!isDoctor()) {
+    return `
+      ${card("treatmentPlan", `
+        ${row("treatmentBy", tr.by)}
+        ${row("treatmentName", tr.name)}
+        ${row("duration", tr.durationDays)}
+        ${block("therapyInstructions", tr.instructions)}
       `)}
-      ${n("adviceDo",I(w.do,a.adviceDo))}
-      ${n("adviceNotDo",I(w.dont,a.adviceDont,"orange"))}`;const o=b.doctors.map(r=>({value:r.name,label:r.name})),l=K.map(r=>({value:m(r),label:m(r)}));return`
+      ${card("adviceDo", pillList(ADVICE.do, adv.adviceDo))}
+      ${card("adviceNotDo", pillList(ADVICE.dont, adv.adviceDont, "orange"))}`;
+  }
+
+  const docs = CLINIC.doctors.map((x) => ({ value: x.name, label: x.name }));
+  const treatOpts = TREATMENTS.map((x) => ({ value: L(x), label: L(x) }));
+  return `
     <form data-form="treatment">
-    ${n("treatmentPlan",`
-      ${d("treatmentBy",h("by",o,e.by))}
-      ${d("treatmentName",h("name",l,e.name))}
-      ${d("duration",p("durationDays",e.durationDays,"number"))}
-      ${d("therapyInstructions",f("instructions",e.instructions))}
+    ${card("treatmentPlan", `
+      ${field("treatmentBy", select("by", docs, tr.by))}
+      ${field("treatmentName", select("name", treatOpts, tr.name))}
+      ${field("duration", input("durationDays", tr.durationDays, "number"))}
+      ${field("therapyInstructions", textarea("instructions", tr.instructions))}
     `)}
-    ${n("adviceDo",x("adviceDo",w.do.map(r=>({id:r.id,label:m(r)})),a.adviceDo))}
-    ${n("adviceNotDo",x("adviceDont",w.dont.map(r=>({id:r.id,label:m(r)})),a.adviceDont))}
-    ${$("saveTreatment",{action:"save-treatment"})}
-    </form>`}export function medicine(){const e=u().medicines.map(r=>`
+    ${card("adviceDo", chipSelect("adviceDo",
+      ADVICE.do.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDo))}
+    ${card("adviceNotDo", chipSelect("adviceDont",
+      ADVICE.dont.map((x) => ({ id: x.id, label: L(x) })), adv.adviceDont))}
+    ${button("saveTreatment", { action: "save-treatment" })}
+    </form>`;
+}
+
+/* ---------------- 6. MEDICINES & INTAKE + REFILL ---------------- */
+export function medicine() {
+  const d = getData();
+  const list = d.medicines.map((m) => `
     <div class="med-item">
       <div class="med-head">
-        <strong>${c(r.name)}</strong>
-        <span class="pill ${r.type==="thailam"?"orange":""}">${c(r.timing)}</span>
+        <strong>${esc(m.name)}</strong>
+        <span class="pill ${m.type === "thailam" ? "orange" : ""}">${esc(m.timing)}</span>
       </div>
-      <div class="row"><span class="label">${i("dosage")}</span><span class="value">${c(r.dosage)}</span></div>
-      <div class="row"><span class="label">${i("foodTiming")}</span><span class="value">${r.food==="before"?i("beforeFood"):i("afterFood")}</span></div>
-      ${r.instructions?`<p class="med-note">${c(r.instructions)}</p>`:""}
+      <div class="row"><span class="label">${t("dosage")}</span><span class="value">${esc(m.dosage)}</span></div>
+      <div class="row"><span class="label">${t("foodTiming")}</span><span class="value">${m.food === "before" ? t("beforeFood") : t("afterFood")}</span></div>
+      ${m.instructions ? `<p class="med-note">${esc(m.instructions)}</p>` : ""}
       <div class="refill-row">
-        <span>\u{1F48A} ${i("refillBody")} <strong>${g(r.refillDate)}</strong></span>
-        <button class="btn small orange" data-action="refill" data-id="${r.id}">${i("refillReorder")}</button>
+        <span>💊 ${t("refillBody")} <strong>${fmtDate(m.refillDate)}</strong></span>
+        <button class="btn small orange" data-action="refill" data-id="${m.id}">${t("refillReorder")}</button>
       </div>
-    </div>`).join(""),a=n("currentMedicines",e||`<p class="muted-note">${i("none")}</p>`);if(!v())return a;const o=[{value:"before",label:i("beforeFood")},{value:"after",label:i("afterFood")}],l=P.map(r=>({value:m(r),label:m(r)}));return`
-    ${a}
+    </div>`).join("");
+
+  const listCard = card("currentMedicines", list || `<p class="muted-note">${t("none")}</p>`);
+  if (!isDoctor()) return listCard; // patient: view + refill only
+
+  const foodOpts = [
+    { value: "before", label: t("beforeFood") },
+    { value: "after", label: t("afterFood") },
+  ];
+  const medOpts = MEDICINES.map((m) => ({ value: L(m), label: L(m) }));
+  return `
+    ${listCard}
     <form data-form="medicine">
-    ${n("addMedicine",`
-      ${d("medicineName",h("name",l,l[0].value))}
-      ${d("timing",p("timing","7:00 AM, 7:00 PM"))}
-      ${d("dosage",p("dosage","15 ml with warm water"))}
-      ${d("foodTiming",h("food",o,"before"))}
-      ${d("specialInstructions",f("instructions",""))}
-      ${$("addMedicineReminder",{action:"add-medicine"})}
+    ${card("addMedicine", `
+      ${field("medicineName", select("name", medOpts, medOpts[0].value))}
+      ${field("timing", input("timing", "7:00 AM, 7:00 PM"))}
+      ${field("dosage", input("dosage", "15 ml with warm water"))}
+      ${field("foodTiming", select("food", foodOpts, "before"))}
+      ${field("specialInstructions", textarea("instructions", ""))}
+      ${button("addMedicineReminder", { action: "add-medicine" })}
     `)}
-    </form>`}export function reminders(){const t=u(),e=o=>t.reminders.filter(l=>l.kind===o),a=o=>o.length?o.map(l=>`<div class="med-item reminder-item">
-        <div class="med-head"><strong>${c(l.label)}</strong><span class="pill">${c(l.time)}</span></div>
-        ${l.dosage?s("dosage",l.dosage):""}
-        ${l.food?s("foodTiming",l.food==="after"?i("afterFood"):i("beforeFood")):""}
-        ${l.instructions?`<p class="med-note">${c(l.instructions)}</p>`:""}
-      </div>`).join(""):`<p class="muted-note">${i("none")}</p>`;return`
-    ${n("enableNotifications",`
+    </form>`;
+}
+
+/* ---------------- 7. REMINDERS ---------------- */
+export function reminders() {
+  const d = getData();
+  const byKind = (kind) => d.reminders.filter((r) => r.kind === kind);
+  const rList = (arr) => arr.length
+    ? arr.map((r) => row(r.time, r.label, true)).join("")
+    : `<p class="muted-note">${t("none")}</p>`;
+
+  return `
+    ${card("enableNotifications", `
       <p class="muted-note" id="notif-status"></p>
-      ${$("enableNotifications",{action:"toggle-notif",cls:"light",attrs:'id="notif-toggle"'})}
+      ${button("enableNotifications", { action: "enable-notif", cls: "light" })}
     `)}
-    ${n("todaysReminders",a(t.reminders))}
-    ${b.features.kashayamReminders&&e("kashayam").length?n("kashayamReminders",a(e("kashayam"))):""}
-    ${b.features.externalApplication&&e("external").length?n("externalApplication",a(e("external"))):""}
-    ${n("appointmentReminder",t.appointments.map(o=>s(g(o.date),o.time,!0)).join("")||`<p class="muted-note">${i("none")}</p>`)}`}export function tests(){const t=new Set(u().testsToDo||[]),e=F.map(a=>({...a,selectedTests:a.tests.filter(o=>t.has(o.id))})).filter(a=>a.selectedTests.length);return e.length?e.map(a=>n(m(a),`
-    <div class="patient-test-list">${a.selectedTests.map(o=>`
-      <div class="patient-test-item"><span class="test-check">\u2713</span><span>${c(o.label)}</span></div>
-    `).join("")}</div>`,{rawTitle:!0})).join(""):n("testsToBeDone",`<p class="muted-note">${i("noTestsSelected")}</p>`)}export function contacts(){const t=b.contact,e=b.doctors[0],a=(t.phone||"").replace(/[^\d+]/g,""),o=(t.whatsapp||"").replace(/[^\d]/g,"");return`
-    ${n("contactsTitle",`
-      ${s("doctorLabel",e.name)}
-      ${s("phoneLabel",t.phone)}
-      ${t.email?s("emailLabel",t.email):""}
-      ${s("address",m(t.address))}
+    ${card("todaysReminders", rList(d.reminders))}
+    ${CLINIC.features.kashayamReminders && byKind("kashayam").length ? card("kashayamReminders", rList(byKind("kashayam"))) : ""}
+    ${CLINIC.features.externalApplication && byKind("external").length ? card("externalApplication", rList(byKind("external"))) : ""}
+    ${card("appointmentReminder", d.appointments.map((a) =>
+      row(fmtDate(a.date), a.time, true)).join("") || `<p class="muted-note">${t("none")}</p>`)}`;
+}
+
+/* ---------------- 8. CONTACTS ---------------- */
+export function contacts() {
+  const c = CLINIC.contact;
+  const doc = CLINIC.doctors[0];
+  const tel = (c.phone || "").replace(/[^\d+]/g, "");
+  const wa = (c.whatsapp || "").replace(/[^\d]/g, "");
+  return `
+    ${card("contactsTitle", `
+      ${row("doctorLabel", doc.name)}
+      ${row("phoneLabel", c.phone)}
+      ${c.email ? row("emailLabel", c.email) : ""}
+      ${row("address", L(c.address))}
     `)}
-    ${n("",`
+    ${card("", `
       <div class="contact-actions">
-        <a class="contact-btn" href="tel:${c(a)}"><span>\u{1F4DE}</span>${i("call")}</a>
-        <a class="contact-btn" href="https://wa.me/${c(o)}" target="_blank" rel="noopener"><span>\u{1F4AC}</span>${i("whatsapp")}</a>
-        <a class="contact-btn" href="mailto:${c(t.email||"")}"><span>\u2709</span>${i("email")}</a>
-        <a class="contact-btn" href="${c(t.mapUrl)}" target="_blank" rel="noopener"><span>\u{1F4CD}</span>${i("directions")}</a>
+        <a class="contact-btn" href="tel:${esc(tel)}"><span>📞</span>${t("call")}</a>
+        <a class="contact-btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener"><span>💬</span>${t("whatsapp")}</a>
+        <a class="contact-btn" href="mailto:${esc(c.email || "")}"><span>✉</span>${t("email")}</a>
+        <a class="contact-btn" href="${esc(c.mapUrl)}" target="_blank" rel="noopener"><span>📍</span>${t("directions")}</a>
       </div>
     `)}
-    ${n("patientReview",`
-      <p class="muted-note">${i("reviewText")}</p>
-      ${$("googleReview",{cls:"orange",action:"google-review"})}
-    `)}`}export function followup(){const e=u().followup;if(!v())return n("followupAppointment",`
-      ${s("followupDate",g(e.date))}
-      ${s("followupTime",e.time)}`);const a=[{value:"both",label:i("reminderBoth")},{value:"day",label:i("reminderDay")},{value:"hours",label:i("reminderHours")}];return`
+    ${card("patientReview", `
+      <p class="muted-note">${t("reviewText")}</p>
+      ${button("googleReview", { cls: "orange", action: "google-review" })}
+    `)}`;
+}
+
+/* ---------------- 9. FOLLOW-UP -> APPOINTMENT ---------------- */
+export function followup() {
+  const d = getData();
+  const f = d.followup;
+
+  if (!isDoctor()) {
+    return card("followupAppointment", `
+      ${row("followupDate", fmtDate(f.date))}
+      ${row("followupTime", f.time)}`);
+  }
+
+  const remOpts = [
+    { value: "both", label: t("reminderBoth") },
+    { value: "day", label: t("reminderDay") },
+    { value: "hours", label: t("reminderHours") },
+  ];
+  return `
     <form data-form="followup">
-    ${n("followupAppointment",`
-      ${d("followupDate",p("date",e.date,"date"))}
-      ${d("followupTime",p("time",e.time,"time"))}
-      ${d("reminder",h("reminderMode",a,e.reminderMode))}
-      ${$("createAppointment",{action:"create-appointment"})}
+    ${card("followupAppointment", `
+      ${field("followupDate", input("date", f.date, "date"))}
+      ${field("followupTime", input("time", f.time, "time"))}
+      ${field("reminder", select("reminderMode", remOpts, f.reminderMode))}
+      ${button("createAppointment", { action: "create-appointment" })}
     `)}
-    </form>`}export function review(){return n("patientReview",`
-    <p class="muted-note">${i("reviewText")}</p>
-    ${$("googleReview",{cls:"orange",action:"google-review"})}
-    ${$("maybeLater",{cls:"light",action:"goto-dashboard"})}`)}export const SCREENS={dashboard:{render:dashboard,titleKey:"titleDashboard"},ads:{render:ads,titleKey:"adsTitle"},visit:{render:visit,titleKey:"newPatientVisit"},diagnosis:{render:diagnosis,titleKey:"diagnosis"},treatment:{render:treatment,titleKey:"treatmentPlan"},medicine:{render:medicine,titleKey:"medicinesIntake"},reminders:{render:reminders,titleKey:"remindersTitle"},tests:{render:tests,titleKey:"testsToBeDone"},contacts:{render:contacts,titleKey:"contactsTitle"},followup:{render:followup,titleKey:"followupAppointment"},review:{render:review,titleKey:"patientReview"}};
+    </form>`;
+}
+
+/* ---------------- 10. REVIEW ---------------- */
+export function review() {
+  return card("patientReview", `
+    <p class="muted-note">${t("reviewText")}</p>
+    ${button("googleReview", { cls: "orange", action: "google-review" })}
+    ${button("maybeLater", { cls: "light", action: "goto-dashboard" })}`);
+}
+
+/* Screen registry */
+export const SCREENS = {
+  dashboard: { render: dashboard, titleKey: "titleDashboard" },
+  ads:       { render: ads,       titleKey: "adsTitle" },
+  visit:     { render: visit,     titleKey: "newPatientVisit" },
+  diagnosis: { render: diagnosis, titleKey: "diagnosis" },
+  treatment: { render: treatment, titleKey: "treatmentPlan" },
+  medicine:  { render: medicine,  titleKey: "medicinesIntake" },
+  reminders: { render: reminders, titleKey: "remindersTitle" },
+  contacts:  { render: contacts,  titleKey: "contactsTitle" },
+  followup:  { render: followup,  titleKey: "followupAppointment" },
+  review:    { render: review,    titleKey: "patientReview" },
+};

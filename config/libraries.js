@@ -1,1 +1,106 @@
-export const HEALTH_ISSUES=[{id:"back-pain",en:"Back Pain"},{id:"neck-pain",en:"Neck Pain"},{id:"knee-joint-pain",en:"Knee / Joint Pain"},{id:"shoulder-pain",en:"Shoulder Pain"},{id:"arthritis",en:"Arthritis"},{id:"acidity",en:"Acidity / Gastric"},{id:"indigestion",en:"Indigestion"},{id:"constipation",en:"Constipation"},{id:"ibs",en:"Irritable Bowel Syndrome (IBS)"},{id:"diabetes",en:"Diabetes"},{id:"hypertension",en:"High Blood Pressure (Hypertension)"},{id:"hypotension",en:"Low Blood Pressure (Hypotension)"},{id:"cholesterol",en:"High Cholesterol"},{id:"thyroid",en:"Thyroid Disorder"},{id:"asthma-allergy",en:"Asthma / Allergy"},{id:"sinusitis",en:"Sinusitis"},{id:"skin",en:"Skin Problem"},{id:"eczema-psoriasis",en:"Eczema / Psoriasis"},{id:"headache-migraine",en:"Headache / Migraine"},{id:"stress-anxiety",en:"Stress / Anxiety"},{id:"depression",en:"Depression"},{id:"insomnia",en:"Sleep Issue (Insomnia)"},{id:"obesity",en:"Weight / Obesity"},{id:"weight-loss",en:"Weight Loss"},{id:"weight-gain",en:"Weight Gain"},{id:"pcod",en:"PCOS / PCOD"},{id:"menstrual",en:"Menstrual Problems"},{id:"infertility",en:"Infertility"},{id:"urinary",en:"Urinary Problems"},{id:"kidney-stone",en:"Kidney Stone"},{id:"fatty-liver",en:"Fatty Liver"},{id:"piles",en:"Piles (Hemorrhoids)"},{id:"varicose",en:"Varicose Veins"},{id:"hair-fall",en:"Hair Fall"},{id:"fatigue",en:"General Weakness / Fatigue"},{id:"cervical-spondylosis",en:"Cervical Spondylosis"},{id:"lumbar-spondylosis",en:"Lumbar Spondylosis"},{id:"sciatica",en:"Sciatica"},{id:"frozen-shoulder",en:"Frozen Shoulder"},{id:"migraine",en:"Migraine"}],TREATMENTS=[{id:"backcare-30",en:"Back Pain Ayurveda Care Plan",ml:"\u0D28\u0D1F\u0D41\u0D35\u0D47\u0D26\u0D28 \u0D06\u0D2F\u0D41\u0D30\u0D4D\u200D\u0D35\u0D47\u0D26 \u0D2A\u0D26\u0D4D\u0D27\u0D24\u0D3F",defaultDays:30},{id:"abhyangam",en:"Abhyangam (Oil Massage)",ml:"\u0D05\u0D2D\u0D4D\u0D2F\u0D02\u0D17\u0D02 (\u0D0E\u0D23\u0D4D\u0D23 \u0D24\u0D3F\u0D30\u0D41\u0D2E\u0D4D\u0D2E\u0D32\u0D4D\u200D)",defaultDays:14},{id:"kizhi",en:"Kizhi (Herbal Bolus)",ml:"\u0D15\u0D3F\u0D34\u0D3F",defaultDays:7},{id:"panchakarma",en:"Panchakarma Detox",ml:"\u0D2A\u0D1E\u0D4D\u0D1A\u0D15\u0D30\u0D4D\u200D\u0D2E\u0D4D\u0D2E",defaultDays:21},{id:"nasyam",en:"Nasyam",ml:"\u0D28\u0D38\u0D4D\u0D2F\u0D02",defaultDays:7},{id:"shirodhara",en:"Shirodhara",ml:"\u0D36\u0D3F\u0D30\u0D4B\u0D27\u0D3E\u0D30",defaultDays:7}],MEDICINES=[{id:"kashayam",en:"Kashayam",ml:"\u0D15\u0D37\u0D3E\u0D2F\u0D02",form:"liquid",defaultDose:"15 ml with warm water"},{id:"gulika",en:"Gulika (Tablet)",ml:"\u0D17\u0D41\u0D33\u0D3F\u0D15",form:"tablet",defaultDose:"1 tablet"},{id:"choornam",en:"Choornam (Powder)",ml:"\u0D1A\u0D42\u0D30\u0D4D\u200D\u0D23\u0D02",form:"powder",defaultDose:"1 tsp"},{id:"lehyam",en:"Lehyam",ml:"\u0D32\u0D47\u0D39\u0D4D\u0D2F\u0D02",form:"paste",defaultDose:"1 tsp"},{id:"arishtam",en:"Arishtam",ml:"\u0D05\u0D30\u0D3F\u0D37\u0D4D\u0D1F\u0D02",form:"liquid",defaultDose:"15 ml after food"},{id:"thailam",en:"Thailam (Oil)",ml:"\u0D24\u0D48\u0D32\u0D02",form:"external",defaultDose:"Apply on affected area"}],LAB_TESTS=[{id:"blood",en:"Basic Blood Tests",ml:"\u0D05\u0D1F\u0D3F\u0D38\u0D4D\u0D25\u0D3E\u0D28 \u0D30\u0D15\u0D4D\u0D24 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"cbc",label:"Complete Blood Count (CBC)"},{id:"esr",label:"ESR"},{id:"crp",label:"C-Reactive Protein (CRP)"},{id:"blood-group",label:"Blood Group (if unknown)"}]},{id:"diabetes",en:"Diabetes",ml:"\u0D2A\u0D4D\u0D30\u0D2E\u0D47\u0D39 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"fbs",label:"Fasting Blood Sugar (FBS)"},{id:"ppbs",label:"Post-Prandial Blood Sugar (PPBS)"},{id:"hba1c",label:"HbA1c"}]},{id:"kidney",en:"Kidney Function",ml:"\u0D35\u0D43\u0D15\u0D4D\u0D15 \u0D2A\u0D4D\u0D30\u0D35\u0D7C\u0D24\u0D4D\u0D24\u0D28 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"creatinine",label:"Serum Creatinine"},{id:"blood-urea",label:"Blood Urea"},{id:"egfr",label:"eGFR"},{id:"sodium",label:"Sodium"},{id:"potassium",label:"Potassium"},{id:"chloride",label:"Chloride"}]},{id:"liver",en:"Liver Function",ml:"\u0D15\u0D30\u0D7E \u0D2A\u0D4D\u0D30\u0D35\u0D7C\u0D24\u0D4D\u0D24\u0D28 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"sgot",label:"SGOT (AST)"},{id:"sgpt",label:"SGPT (ALT)"},{id:"bilirubin",label:"Bilirubin"},{id:"alp",label:"Alkaline Phosphatase"},{id:"albumin",label:"Albumin"},{id:"total-protein",label:"Total Protein"}]},{id:"lipid",en:"Lipid Profile",ml:"\u0D32\u0D3F\u0D2A\u0D3F\u0D21\u0D4D \u0D2A\u0D4D\u0D30\u0D4A\u0D2B\u0D48\u0D7D",tests:[{id:"total-cholesterol",label:"Total Cholesterol"},{id:"hdl",label:"HDL"},{id:"ldl",label:"LDL"},{id:"triglycerides",label:"Triglycerides"},{id:"vldl",label:"VLDL"}]},{id:"thyroid",en:"Thyroid",ml:"\u0D24\u0D48\u0D31\u0D4B\u0D2F\u0D4D\u0D21\u0D4D \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"tsh",label:"TSH"},{id:"free-t3",label:"Free T3"},{id:"free-t4",label:"Free T4 (if needed)"}]},{id:"nutrition",en:"Nutritional Status",ml:"\u0D2A\u0D4B\u0D37\u0D15 \u0D28\u0D3F\u0D32 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"vitamin-d",label:"Vitamin D"},{id:"vitamin-b12",label:"Vitamin B12"},{id:"ferritin",label:"Ferritin"},{id:"iron-profile",label:"Iron Profile"},{id:"folate",label:"Folate"}]},{id:"urine",en:"Urine Tests",ml:"\u0D2E\u0D42\u0D24\u0D4D\u0D30 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"urine-routine",label:"Routine Urine Analysis"},{id:"urine-microscopy",label:"Urine Microscopy"},{id:"urine-culture",label:"Urine Culture (if infection suspected)"}]},{id:"stool",en:"Stool Tests",ml:"\u0D2E\u0D32 \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"stool-routine",label:"Stool Routine"},{id:"occult-blood",label:"Occult Blood"},{id:"ova-parasites",label:"Ova & Parasites"}]},{id:"cardiac",en:"Cardiac Evaluation",ml:"\u0D39\u0D43\u0D26\u0D2F \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"ecg",label:"ECG"},{id:"blood-pressure",label:"Blood Pressure"},{id:"2d-echo",label:"2D Echo (if indicated)"},{id:"tmt",label:"Treadmill Test (TMT), if necessary"}]},{id:"imaging",en:"Imaging",ml:"\u0D07\u0D2E\u0D47\u0D1C\u0D3F\u0D02\u0D17\u0D4D \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"chest-xray",label:"Chest X-ray"},{id:"abdominal-ultrasound",label:"Abdominal Ultrasound"},{id:"joint-xray",label:"X-ray of painful joints"},{id:"mri-ct",label:"MRI/CT (only when clinically indicated)"}]},{id:"women",en:"Women's Health",ml:"\u0D38\u0D4D\u0D24\u0D4D\u0D30\u0D40\u0D15\u0D33\u0D41\u0D1F\u0D46 \u0D06\u0D30\u0D4B\u0D17\u0D4D\u0D2F \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"pap-smear",label:"Pap Smear"},{id:"breast-examination",label:"Breast Examination"},{id:"mammography",label:"Mammography (age appropriate)"},{id:"pelvic-ultrasound",label:"Pelvic Ultrasound"},{id:"female-hormonal-profile",label:"Hormonal Profile (if required)"}]},{id:"men",en:"Men's Health",ml:"\u0D2A\u0D41\u0D30\u0D41\u0D37\u0D28\u0D4D\u0D2E\u0D3E\u0D30\u0D41\u0D1F\u0D46 \u0D06\u0D30\u0D4B\u0D17\u0D4D\u0D2F \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"psa",label:"PSA (for men over 50 or if symptomatic)"},{id:"prostate-examination",label:"Prostate Examination"}]},{id:"hormonal",en:"Hormonal Tests",ml:"\u0D39\u0D4B\u0D7C\u0D2E\u0D4B\u0D7A \u0D2A\u0D30\u0D3F\u0D36\u0D4B\u0D27\u0D28\u0D15\u0D7E",tests:[{id:"testosterone",label:"Testosterone"},{id:"cortisol",label:"Cortisol"},{id:"dhea",label:"DHEA"},{id:"insulin",label:"Insulin"},{id:"lh",label:"LH"},{id:"fsh",label:"FSH"},{id:"prolactin",label:"Prolactin"}]}],PATHYA=[{id:"warm-food",en:"Warm freshly cooked food",ml:"\u0D1A\u0D42\u0D1F\u0D41\u0D33\u0D4D\u0D33 \u0D2A\u0D41\u0D24\u0D3F\u0D2F \u0D2D\u0D15\u0D4D\u0D37\u0D23\u0D02"},{id:"kanji",en:"Kanji (rice gruel)",ml:"\u0D15\u0D1E\u0D4D\u0D1E\u0D3F"},{id:"veg",en:"Cooked vegetables",ml:"\u0D35\u0D47\u0D35\u0D3F\u0D1A\u0D4D\u0D1A \u0D2A\u0D1A\u0D4D\u0D1A\u0D15\u0D4D\u0D15\u0D31\u0D3F\u0D15\u0D33\u0D4D\u200D"},{id:"cumin-water",en:"Cumin / ginger water",ml:"\u0D1C\u0D40\u0D30\u0D15 / \u0D07\u0D1E\u0D4D\u0D1A\u0D3F \u0D35\u0D46\u0D33\u0D4D\u0D33\u0D02"},{id:"buttermilk",en:"Fresh buttermilk",ml:"\u0D2E\u0D4B\u0D30\u0D4D"}],APATHYA=[{id:"cold",en:"Cold food & drinks",ml:"\u0D24\u0D23\u0D41\u0D24\u0D4D\u0D24 \u0D2D\u0D15\u0D4D\u0D37\u0D23\u0D02"},{id:"curd-night",en:"Curd at night",ml:"\u0D30\u0D3E\u0D24\u0D4D\u0D30\u0D3F \u0D24\u0D48\u0D30\u0D4D"},{id:"fried",en:"Fried & oily food",ml:"\u0D0E\u0D23\u0D4D\u0D23\u0D2F\u0D3F\u0D32\u0D4D\u200D \u0D35\u0D31\u0D41\u0D24\u0D4D\u0D24\u0D24\u0D4D"},{id:"bakery",en:"Bakery items",ml:"\u0D2C\u0D47\u0D15\u0D4D\u0D15\u0D31\u0D3F \u0D38\u0D3E\u0D27\u0D28\u0D19\u0D4D\u0D19\u0D33\u0D4D\u200D"},{id:"cold-drinks",en:"Aerated / cold drinks",ml:"\u0D36\u0D40\u0D24\u0D33\u0D2A\u0D3E\u0D28\u0D40\u0D2F\u0D19\u0D4D\u0D19\u0D33\u0D4D\u200D"},{id:"maida",en:"Maida / refined flour",ml:"\u0D2E\u0D48\u0D26"}],ADVICE={do:[{id:"walk",en:"Light walking daily",ml:"\u0D26\u0D3F\u0D35\u0D38\u0D35\u0D41\u0D02 \u0D32\u0D18\u0D41 \u0D28\u0D1F\u0D24\u0D4D\u0D24\u0D02"},{id:"sleep-early",en:"Sleep early, wake early",ml:"\u0D28\u0D47\u0D30\u0D24\u0D4D\u0D24\u0D46 \u0D09\u0D31\u0D19\u0D4D\u0D19\u0D41\u0D15, \u0D28\u0D47\u0D30\u0D24\u0D4D\u0D24\u0D46 \u0D0E\u0D34\u0D41\u0D28\u0D4D\u0D28\u0D47\u0D32\u0D4D\u200D\u0D15\u0D4D\u0D15\u0D41\u0D15"},{id:"warm-water",en:"Drink warm water",ml:"\u0D1A\u0D42\u0D1F\u0D41\u0D35\u0D46\u0D33\u0D4D\u0D33\u0D02 \u0D15\u0D41\u0D1F\u0D3F\u0D15\u0D4D\u0D15\u0D41\u0D15"},{id:"posture",en:"Maintain good posture",ml:"\u0D36\u0D30\u0D3F\u0D2F\u0D3E\u0D2F \u0D07\u0D30\u0D3F\u0D2A\u0D4D\u0D2A\u0D4D \u0D28\u0D3F\u0D32\u0D28\u0D3F\u0D30\u0D4D\u200D\u0D24\u0D4D\u0D24\u0D41\u0D15"}],dont:[{id:"no-lift",en:"Do not lift heavy weights",ml:"\u0D2D\u0D3E\u0D30\u0D02 \u0D09\u0D2F\u0D30\u0D4D\u200D\u0D24\u0D4D\u0D24\u0D30\u0D41\u0D24\u0D4D"},{id:"no-sit",en:"Avoid long sitting",ml:"\u0D0F\u0D31\u0D46\u0D28\u0D47\u0D30\u0D02 \u0D07\u0D30\u0D3F\u0D15\u0D4D\u0D15\u0D30\u0D41\u0D24\u0D4D"},{id:"no-late",en:"Avoid sleeping late",ml:"\u0D35\u0D48\u0D15\u0D3F \u0D09\u0D31\u0D19\u0D4D\u0D19\u0D30\u0D41\u0D24\u0D4D"},{id:"no-cold",en:"Avoid cold exposure",ml:"\u0D24\u0D23\u0D41\u0D2A\u0D4D\u0D2A\u0D4D \u0D12\u0D34\u0D3F\u0D35\u0D3E\u0D15\u0D4D\u0D15\u0D41\u0D15"}]};
+/* =============================================================
+ * CLINICAL LIBRARIES  —  reusable, per-clinic reference lists
+ * -------------------------------------------------------------
+ * Doctors pick from these dropdowns instead of typing everything.
+ * Extend / replace these for each clinic without touching app code.
+ * Each entry carries en + ml so the whole app stays bilingual.
+ * ============================================================= */
+
+/* Common health issues (used by "Other health issues" chips).
+ * "Other (Specify)" free-text is handled separately in the form. */
+export const HEALTH_ISSUES = [
+  { id: "back-pain", en: "Back Pain" },
+  { id: "neck-pain", en: "Neck Pain" },
+  { id: "knee-joint-pain", en: "Knee / Joint Pain" },
+  { id: "shoulder-pain", en: "Shoulder Pain" },
+  { id: "arthritis", en: "Arthritis" },
+  { id: "acidity", en: "Acidity / Gastric" },
+  { id: "indigestion", en: "Indigestion" },
+  { id: "constipation", en: "Constipation" },
+  { id: "ibs", en: "Irritable Bowel Syndrome (IBS)" },
+  { id: "diabetes", en: "Diabetes" },
+  { id: "hypertension", en: "High Blood Pressure (Hypertension)" },
+  { id: "hypotension", en: "Low Blood Pressure (Hypotension)" },
+  { id: "cholesterol", en: "High Cholesterol" },
+  { id: "thyroid", en: "Thyroid Disorder" },
+  { id: "asthma-allergy", en: "Asthma / Allergy" },
+  { id: "sinusitis", en: "Sinusitis" },
+  { id: "skin", en: "Skin Problem" },
+  { id: "eczema-psoriasis", en: "Eczema / Psoriasis" },
+  { id: "headache-migraine", en: "Headache / Migraine" },
+  { id: "stress-anxiety", en: "Stress / Anxiety" },
+  { id: "depression", en: "Depression" },
+  { id: "insomnia", en: "Sleep Issue (Insomnia)" },
+  { id: "obesity", en: "Weight / Obesity" },
+  { id: "weight-loss", en: "Weight Loss" },
+  { id: "weight-gain", en: "Weight Gain" },
+  { id: "pcod", en: "PCOS / PCOD" },
+  { id: "menstrual", en: "Menstrual Problems" },
+  { id: "infertility", en: "Infertility" },
+  { id: "urinary", en: "Urinary Problems" },
+  { id: "kidney-stone", en: "Kidney Stone" },
+  { id: "fatty-liver", en: "Fatty Liver" },
+  { id: "piles", en: "Piles (Hemorrhoids)" },
+  { id: "varicose", en: "Varicose Veins" },
+  { id: "hair-fall", en: "Hair Fall" },
+  { id: "fatigue", en: "General Weakness / Fatigue" },
+  { id: "cervical-spondylosis", en: "Cervical Spondylosis" },
+  { id: "lumbar-spondylosis", en: "Lumbar Spondylosis" },
+  { id: "sciatica", en: "Sciatica" },
+  { id: "frozen-shoulder", en: "Frozen Shoulder" },
+  { id: "migraine", en: "Migraine" },
+];
+
+/* Treatment library */
+export const TREATMENTS = [
+  { id: "backcare-30", en: "Back Pain Ayurveda Care Plan", ml: "നടുവേദന ആയുര്‍വേദ പദ്ധതി", defaultDays: 30 },
+  { id: "abhyangam", en: "Abhyangam (Oil Massage)", ml: "അഭ്യംഗം (എണ്ണ തിരുമ്മല്‍)", defaultDays: 14 },
+  { id: "kizhi", en: "Kizhi (Herbal Bolus)", ml: "കിഴി", defaultDays: 7 },
+  { id: "panchakarma", en: "Panchakarma Detox", ml: "പഞ്ചകര്‍മ്മ", defaultDays: 21 },
+  { id: "nasyam", en: "Nasyam", ml: "നസ്യം", defaultDays: 7 },
+  { id: "shirodhara", en: "Shirodhara", ml: "ശിരോധാര", defaultDays: 7 },
+];
+
+/* Medicine library */
+export const MEDICINES = [
+  { id: "kashayam", en: "Kashayam", ml: "കഷായം", form: "liquid", defaultDose: "15 ml with warm water" },
+  { id: "gulika", en: "Gulika (Tablet)", ml: "ഗുളിക", form: "tablet", defaultDose: "1 tablet" },
+  { id: "choornam", en: "Choornam (Powder)", ml: "ചൂര്‍ണം", form: "powder", defaultDose: "1 tsp" },
+  { id: "lehyam", en: "Lehyam", ml: "ലേഹ്യം", form: "paste", defaultDose: "1 tsp" },
+  { id: "arishtam", en: "Arishtam", ml: "അരിഷ്ടം", form: "liquid", defaultDose: "15 ml after food" },
+  { id: "thailam", en: "Thailam (Oil)", ml: "തൈലം", form: "external", defaultDose: "Apply on affected area" },
+];
+
+/* Pathya (foods allowed) / Apathya (foods to avoid) library */
+export const PATHYA = [
+  { id: "warm-food", en: "Warm freshly cooked food", ml: "ചൂടുള്ള പുതിയ ഭക്ഷണം" },
+  { id: "kanji", en: "Kanji (rice gruel)", ml: "കഞ്ഞി" },
+  { id: "veg", en: "Cooked vegetables", ml: "വേവിച്ച പച്ചക്കറികള്‍" },
+  { id: "cumin-water", en: "Cumin / ginger water", ml: "ജീരക / ഇഞ്ചി വെള്ളം" },
+  { id: "buttermilk", en: "Fresh buttermilk", ml: "മോര്" },
+];
+
+export const APATHYA = [
+  { id: "cold", en: "Cold food & drinks", ml: "തണുത്ത ഭക്ഷണം" },
+  { id: "curd-night", en: "Curd at night", ml: "രാത്രി തൈര്" },
+  { id: "fried", en: "Fried & oily food", ml: "എണ്ണയില്‍ വറുത്തത്" },
+  { id: "bakery", en: "Bakery items", ml: "ബേക്കറി സാധനങ്ങള്‍" },
+  { id: "cold-drinks", en: "Aerated / cold drinks", ml: "ശീതളപാനീയങ്ങള്‍" },
+  { id: "maida", en: "Maida / refined flour", ml: "മൈദ" },
+];
+
+/* Doctor advice library (do / don't) */
+export const ADVICE = {
+  do: [
+    { id: "walk", en: "Light walking daily", ml: "ദിവസവും ലഘു നടത്തം" },
+    { id: "sleep-early", en: "Sleep early, wake early", ml: "നേരത്തെ ഉറങ്ങുക, നേരത്തെ എഴുന്നേല്‍ക്കുക" },
+    { id: "warm-water", en: "Drink warm water", ml: "ചൂടുവെള്ളം കുടിക്കുക" },
+    { id: "posture", en: "Maintain good posture", ml: "ശരിയായ ഇരിപ്പ് നിലനിര്‍ത്തുക" },
+  ],
+  dont: [
+    { id: "no-lift", en: "Do not lift heavy weights", ml: "ഭാരം ഉയര്‍ത്തരുത്" },
+    { id: "no-sit", en: "Avoid long sitting", ml: "ഏറെനേരം ഇരിക്കരുത്" },
+    { id: "no-late", en: "Avoid sleeping late", ml: "വൈകി ഉറങ്ങരുത്" },
+    { id: "no-cold", en: "Avoid cold exposure", ml: "തണുപ്പ് ഒഴിവാക്കുക" },
+  ],
+};

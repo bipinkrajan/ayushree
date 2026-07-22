@@ -1,1 +1,49 @@
-import{SUPABASE as e}from"../config/supabase.config.js";async function o(t,i){const n=await fetch(`${e.url}/rest/v1/rpc/${t}`,{method:"POST",headers:{apikey:e.anonKey,Authorization:"Bearer "+e.anonKey,"Content-Type":"application/json"},body:JSON.stringify(i)});if(!n.ok)throw new Error("network");return n.json()}async function s(t){try{return await o("clinic_branding",{p_slug:t})}catch{return null}}async function c(t,i){let n;try{n=await o("patient_portal",{p_op:t.trim(),p_pin:i.trim()})}catch{const p=new Error("network");throw p.code="network",p}if(!n||n.error){const r=new Error("invalid");throw r.code="invalid",r}return n}async function u(t,i,n){const r=n.toJSON();if(!r.endpoint||!r.keys?.p256dh||!r.keys?.auth)throw new Error("subscription");return o("save_push_subscription",{p_op:t.trim(),p_pin:i.trim(),p_endpoint:r.endpoint,p_p256dh:r.keys.p256dh,p_auth:r.keys.auth,p_user_agent:navigator.userAgent})}async function d(t,i,n){return o("disable_push_subscription",{p_op:t.trim(),p_pin:i.trim(),p_endpoint:n.endpoint})}export{s as clinicBranding,d as disablePushSubscription,c as patientLogin,u as savePushSubscription};
+/* =============================================================
+ * API — talks to Supabase over REST (no SDK needed).
+ * Patient app only needs the login RPC, which returns the whole
+ * read-only bundle for that patient.
+ * ============================================================= */
+import { SUPABASE } from "../config/supabase.config.js";
+
+async function rpc(fn, body) {
+  const res = await fetch(`${SUPABASE.url}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE.anonKey,
+      "Authorization": "Bearer " + SUPABASE.anonKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error("network");
+  return res.json();
+}
+
+/* Public: fetch a clinic's branding (name, logo, colour, review link) */
+export async function clinicBranding(slug) {
+  try { return await rpc("clinic_branding", { p_slug: slug }); }
+  catch (_) { return null; }
+}
+
+/* Patient logs a daily mood ('love'|'happy'|'sad'). Re-validates OP + PIN
+ * server-side (submit_mood RPC). Returns { ok:true, mood } or { error }.
+ * Throws {code:'network'} if the request fails. */
+export async function submitMood(op, pin, mood) {
+  try {
+    return await rpc("submit_mood", { p_op: op.trim(), p_pin: pin.trim(), p_mood: mood });
+  } catch (_) {
+    const err = new Error("network"); err.code = "network"; throw err;
+  }
+}
+
+/* Returns the patient bundle, or throws {code:'invalid'|'network'} */
+export async function patientLogin(op, pin) {
+  let data;
+  try {
+    data = await rpc("patient_portal", { p_op: op.trim(), p_pin: pin.trim() });
+  } catch (e) {
+    const err = new Error("network"); err.code = "network"; throw err;
+  }
+  if (!data || data.error) { const err = new Error("invalid"); err.code = "invalid"; throw err; }
+  return data;
+}

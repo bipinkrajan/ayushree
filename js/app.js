@@ -1,7 +1,273 @@
-import{CLINIC as d,applyTheme as $}from"../config/clinic.config.js";import{VAPID_PUBLIC_KEY as R}from"../config/push.config.js";import{t as o,L as v,getLang as f,setLang as h,onLangChange as q}from"./i18n.js";import{getData as m,update as O,isDoctor as P,isLoggedIn as w,loginWithBundle as M,logout as U}from"./store.js";import{patientLogin as D,clinicBranding as W,savePushSubscription as F,disablePushSubscription as K}from"./api.js";import{SCREENS as u}from"./screens.js";import{toast as c}from"./components.js";let s="dashboard",g="";function V(){const e=new URLSearchParams(window.location.search).get("screen");e&&u[e]&&(s=e),$(),document.documentElement.lang=f(),j(),oe(),H(),q(()=>{L(),w()&&(k(),y())}),w()?(C(),T()):E(),ae()}async function H(){const e=await W(d.id);e&&(e.name&&(d.name={en:e.name,ml:d.name.ml||e.name}),e.review_url&&(d.googleReviewUrl=e.review_url),e.theme_color&&document.documentElement.style.setProperty("--green",e.theme_color),e.logo_url&&document.querySelectorAll(".login-logo, .brand-logo").forEach(t=>{t.src=e.logo_url}))}function E(){document.getElementById("login-screen").classList.remove("hidden"),document.querySelector(".device").classList.add("hidden"),L()}function C(){document.getElementById("login-screen").classList.add("hidden"),document.querySelector(".device").classList.remove("hidden"),k(),y()}function L(){document.getElementById("login-title").textContent=o("patientLogin"),document.getElementById("lbl-op").textContent=o("opNumber"),document.getElementById("lbl-pin").textContent=o("pin"),document.getElementById("login-btn").textContent=o("login"),document.getElementById("login-hint").textContent=o("loginHint"),document.getElementById("lgn-en").classList.toggle("active",f()==="en"),document.getElementById("lgn-ml").classList.toggle("active",f()==="ml")}async function x(){const e=document.getElementById("in-op").value,t=document.getElementById("in-pin").value,n=document.getElementById("login-error"),i=document.getElementById("login-btn");if(n.classList.add("hidden"),!e.trim()||!t.trim()){n.textContent=o("loginInvalid"),n.classList.remove("hidden");return}i.disabled=!0,i.textContent=o("loggingIn");try{const a=await D(e,t);M(a),g=t.trim(),document.getElementById("in-pin").value="",s="dashboard",C(),T()}catch(a){n.textContent=a.code==="network"?o("loginNetwork"):o("loginInvalid"),n.classList.remove("hidden")}finally{i.disabled=!1,i.textContent=o("login")}}function k(){document.getElementById("doctorLine").textContent=`${o("doctorLabel")}: ${d.doctors[0].name}`,document.getElementById("screenTitle").textContent=o(u[s].titleKey),document.getElementById("btn-en").classList.toggle("active",f()==="en"),document.getElementById("btn-ml").classList.toggle("active",f()==="ml"),p("nav-home","home"),p("nav-ads","ads"),p("nav-treatment","treatment"),p("nav-reminders","reminders"),p("nav-contacts","contacts");const e=document.getElementById("logout-btn");e&&(e.querySelector(".menu-label").textContent=o("logout")),document.querySelectorAll("[data-screen]").forEach(t=>{t.querySelector(".menu-label").textContent=o(u[t.getAttribute("data-screen")].titleKey)}),document.querySelector('[data-screen="diagnosis"] .lock')?.classList.toggle("hidden",P())}const p=(e,t)=>{const n=document.getElementById(e);n&&(n.textContent=o(t))};function y(){const e=document.getElementById("view");if(!m()){E();return}e.innerHTML=u[s].render(),document.getElementById("screenTitle").textContent=o(u[s].titleKey),document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.nav===s)),document.querySelectorAll("[data-screen]").forEach(n=>n.classList.toggle("active",n.dataset.screen===s)),e.scrollTop=0,s==="reminders"&&I()}function b(e){u[e]&&(s=e,B(),y())}function j(){document.getElementById("login-btn").onclick=x,document.getElementById("in-pin").addEventListener("keydown",t=>{t.key==="Enter"&&x()}),document.getElementById("lgn-en").onclick=()=>h("en"),document.getElementById("lgn-ml").onclick=()=>h("ml"),document.getElementById("btn-en").onclick=()=>h("en"),document.getElementById("btn-ml").onclick=()=>h("ml"),document.getElementById("menu-btn").onclick=ne,document.getElementById("menu-overlay").onclick=B,document.getElementById("alarm-close").onclick=_,document.getElementById("alarm-done").onclick=_,document.getElementById("logout-btn").onclick=()=>{g="",U(),B(),E()},document.querySelectorAll("[data-nav]").forEach(t=>t.onclick=()=>b(t.dataset.nav)),document.querySelectorAll("[data-screen]").forEach(t=>t.onclick=()=>b(t.dataset.screen)),document.getElementById("view").addEventListener("click",G)}function G(e){const t=e.target.closest(".chip");if(t){t.classList.toggle("on");return}const n=e.target.closest("[data-action]");if(!n)return;const i={"mark-complete":J,"goto-followup":()=>b("followup"),"goto-dashboard":()=>b("dashboard"),refill:()=>Y(n.dataset.id),"google-review":z,"toggle-notif":X,"share-ad":()=>Q(n.dataset.id)};i[n.dataset.action]&&(e.preventDefault(),i[n.dataset.action]())}function J(){const e=m(),t=e.treatment.durationDays,n=Math.min(e.progress.completedDays+1,t);O("progress",{completedDays:n}),c(`${o("day")} ${n} ${o("of")} ${t} \u2713`),y()}function Y(e){const n=m().medicines.find(i=>i.id===e);c(`${o("refillReorder")}: ${n?n.name:""} \u2713`)}function z(){window.open(d.googleReviewUrl,"_blank","noopener")}async function Q(e){const t=m().ads.find(r=>r.id===e);if(!t)return;const n=v(t.title),i=`${n}
-${v(t.body)}
+/* =============================================================
+ * APP (patient) — login gate, routing, rendering, PWA wiring.
+ * Data is the logged-in patient's live record from Supabase.
+ * ============================================================= */
+import { CLINIC, applyTheme } from "../config/clinic.config.js";
+import { t, L, getLang, setLang, onLangChange } from "./i18n.js";
+import { getData, update, isDoctor, isLoggedIn, loginWithBundle, logout, getCreds, setMoodToday } from "./store.js";
+import { patientLogin, clinicBranding, submitMood } from "./api.js";
+import { SCREENS } from "./screens.js";
+import { toast } from "./components.js";
 
-${v(d.name)}`,a=d.siteUrl;try{if(navigator.share){await navigator.share({title:n,text:i,url:a});return}}catch{return}try{await navigator.clipboard.writeText(`${i}
-${a}`),c(o("linkCopied"))}catch{window.open(`https://wa.me/?text=${encodeURIComponent(i+`
-`+a)}`,"_blank","noopener")}}async function X(){if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){c(o("notifUnsupported"));return}try{const e=await navigator.serviceWorker.ready,t=await e.pushManager.getSubscription();t?await ee(t):await Z(e)}catch{c(o("notifFailed"))}await I()}async function Z(e){const t=g||window.prompt(o("pinForReminders"))?.trim();if(!t)return;let n=null;try{if(await Notification.requestPermission()!=="granted"){c(o("notifBlocked")),await I();return}n=await e.pushManager.subscribe({userVisibleOnly:!0,applicationServerKey:te(R)});const a=m()?.patient?.opNumber||"";await F(a,t,n),g=t,c(o("notifOn"))}catch{n&&await n.unsubscribe().catch(()=>{}),c(o("notifFailed"))}}async function ee(e){const t=g||window.prompt(o("pinForReminders"))?.trim();if(t)try{const n=m()?.patient?.opNumber||"";await K(n,t,e),await e.unsubscribe(),g=t,c(o("notifOff"))}catch{c(o("notifOffFailed"))}}async function I(){const e=document.getElementById("notif-status");if(!e)return;const t=document.getElementById("notif-toggle"),n="Notification"in window?Notification.permission:"unsupported";if(n==="denied"){e.textContent="\u26A0\uFE0F "+o("notifBlocked"),t&&(t.textContent=o("enableNotifications"));return}if(n!=="granted"||!("serviceWorker"in navigator)||!("PushManager"in window)){e.textContent=n==="unsupported"?"\u26A0\uFE0F "+o("notifUnsupported"):"\u25CB "+o("notifOff"),t&&(t.textContent=o("enableNotifications"));return}try{const i=await navigator.serviceWorker.getRegistration(),a=i&&await i.pushManager.getSubscription();e.textContent=a?"\u2705 "+o("notifOn"):"\u25CB "+o("notifOff"),t&&(t.textContent=o(a?"disableNotifications":"enableNotifications"))}catch{e.textContent="",t&&(t.textContent=o("enableNotifications"))}}function te(e){const t="=".repeat((4-e.length%4)%4),n=(e+t).replace(/-/g,"+").replace(/_/g,"/"),i=atob(n);return Uint8Array.from(i,a=>a.charCodeAt(0))}function ne(){document.getElementById("menu").classList.toggle("open"),document.getElementById("menu-overlay").classList.toggle("show")}function B(){document.getElementById("menu").classList.remove("open"),document.getElementById("menu-overlay").classList.remove("show")}function oe(){"serviceWorker"in navigator&&navigator.serviceWorker.register("./service-worker.js").catch(()=>{});let e;window.addEventListener("beforeinstallprompt",t=>{t.preventDefault(),e=t;const n=document.getElementById("install-btn");n.classList.remove("hidden"),n.onclick=async()=>{n.classList.add("hidden"),e.prompt(),e=null}})}const S="ayusree.alarmshown";function ie(){const e=new Date().toISOString().slice(0,10);try{const t=JSON.parse(localStorage.getItem(S)||"{}");return t.date===e?t:{date:e,ids:[]}}catch{return{date:e,ids:[]}}}function ae(){A(),setInterval(A,3e4)}function A(){if(!w())return;const e=m();if(!e||!e.reminders)return;const t=new Date,n=String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0"),i=ie();for(const a of e.reminders){const r=(a.time||"").slice(0,5),l=r+"|"+(a.label||"");if(r===n&&!i.ids.includes(l)){i.ids.push(l),localStorage.setItem(S,JSON.stringify(i)),N(a);break}}}function re(e){const t=/^(\d{1,2}):(\d{2})/.exec(e||"");if(!t)return e||"";let n=+t[1];const i=n>=12?"PM":"AM";return n=n%12||12,`${n}:${t[2]} ${i}`}function N(e){document.getElementById("alarm-title").textContent=o("reminderAlarm"),document.getElementById("alarm-message").textContent=e.message||o("medicineTime"),document.getElementById("alarm-label").textContent=e.label||"",document.getElementById("alarm-time").textContent=re(e.time);const t=[];e.dosage&&t.push(`${o("dosage")}: ${e.dosage}`),e.food&&t.push(o(e.food==="after"?"afterFood":"beforeFood")),e.instructions&&t.push(e.instructions),document.getElementById("alarm-details").textContent=t.join(`
-`),document.getElementById("alarm-done").textContent=o("reminderDone"),document.getElementById("alarm").classList.remove("hidden"),ce()}function _(){document.getElementById("alarm").classList.add("hidden")}function T(){const e=new URLSearchParams(window.location.search),t=e.get("alarm");if(!t||!w())return;const i=m()?.reminders?.find(a=>a.id===t)||{id:t,label:e.get("alarmLabel")||"",time:e.get("alarmTime")||"",message:e.get("alarmText")||o("medicineTime")};s="reminders",y(),N(i),window.history.replaceState({},"","./?screen=reminders")}function ce(){try{const e=window.AudioContext||window.webkitAudioContext;if(!e)return;const t=new e;[[659.25,0],[783.99,.32],[987.77,.64]].forEach(([n,i])=>{const a=t.createOscillator(),r=t.createGain();a.type="sine",a.frequency.value=n,a.connect(r),r.connect(t.destination);const l=t.currentTime+i;r.gain.setValueAtTime(0,l),r.gain.linearRampToValueAtTime(.16,l+.05),r.gain.exponentialRampToValueAtTime(.001,l+.6),a.start(l),a.stop(l+.65)})}catch{}}V();
+let currentScreen = "dashboard";
+
+/* ---------- Boot ---------- */
+function boot() {
+  applyTheme();
+  document.documentElement.lang = getLang();
+  wireGlobal();
+  registerSW();
+  applyBranding();
+  onLangChange(() => { paintLogin(); if (isLoggedIn()) { paintChrome(); render(); } });
+  if (isLoggedIn()) showApp(); else showLogin();
+  startReminders();
+}
+
+/* ---------- Branding (loaded from DB, white-label) ---------- */
+async function applyBranding() {
+  const b = await clinicBranding(CLINIC.id);
+  if (!b) return;
+  if (b.name) CLINIC.name = { en: b.name, ml: CLINIC.name.ml || b.name };
+  if (b.review_url) CLINIC.googleReviewUrl = b.review_url;
+  if (b.theme_color) document.documentElement.style.setProperty("--green", b.theme_color);
+  if (b.logo_url) document.querySelectorAll(".login-logo, .brand-logo").forEach((img) => { img.src = b.logo_url; });
+}
+
+/* ---------- Login ---------- */
+function showLogin() {
+  document.getElementById("login-screen").classList.remove("hidden");
+  document.querySelector(".device").classList.add("hidden");
+  paintLogin();
+}
+function showApp() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.querySelector(".device").classList.remove("hidden");
+  paintChrome();
+  render();
+}
+function paintLogin() {
+  document.getElementById("login-title").textContent = t("patientLogin");
+  document.getElementById("lbl-op").textContent = t("opNumber");
+  document.getElementById("lbl-pin").textContent = t("pin");
+  document.getElementById("login-btn").textContent = t("login");
+  document.getElementById("login-hint").textContent = t("loginHint");
+  document.getElementById("lgn-en").classList.toggle("active", getLang() === "en");
+  document.getElementById("lgn-ml").classList.toggle("active", getLang() === "ml");
+}
+async function doLogin() {
+  const op = document.getElementById("in-op").value;
+  const pin = document.getElementById("in-pin").value;
+  const err = document.getElementById("login-error");
+  const btn = document.getElementById("login-btn");
+  err.classList.add("hidden");
+  if (!op.trim() || !pin.trim()) { err.textContent = t("loginInvalid"); err.classList.remove("hidden"); return; }
+  btn.disabled = true; btn.textContent = t("loggingIn");
+  try {
+    const bundle = await patientLogin(op, pin);
+    loginWithBundle(bundle, { op: op.trim(), pin: pin.trim() });
+    document.getElementById("in-pin").value = "";
+    currentScreen = "dashboard";
+    showApp();
+  } catch (e) {
+    err.textContent = e.code === "network" ? t("loginNetwork") : t("loginInvalid");
+    err.classList.remove("hidden");
+  } finally {
+    btn.disabled = false; btn.textContent = t("login");
+  }
+}
+
+/* ---------- Header / chrome ---------- */
+function paintChrome() {
+  document.getElementById("doctorLine").textContent = `${t("doctorLabel")}: ${CLINIC.doctors[0].name}`;
+  document.getElementById("screenTitle").textContent = t(SCREENS[currentScreen].titleKey);
+  document.getElementById("btn-en").classList.toggle("active", getLang() === "en");
+  document.getElementById("btn-ml").classList.toggle("active", getLang() === "ml");
+
+  setText("nav-home", "home"); setText("nav-ads", "ads"); setText("nav-treatment", "treatment");
+  setText("nav-reminders", "reminders"); setText("nav-contacts", "contacts");
+  const lg = document.getElementById("logout-btn"); if (lg) lg.querySelector(".menu-label").textContent = t("logout");
+
+  document.querySelectorAll("[data-screen]").forEach((el) => {
+    el.querySelector(".menu-label").textContent = t(SCREENS[el.getAttribute("data-screen")].titleKey);
+  });
+  document.querySelector('[data-screen="diagnosis"] .lock')?.classList.toggle("hidden", isDoctor());
+}
+const setText = (id, key) => { const e = document.getElementById(id); if (e) e.textContent = t(key); };
+
+/* ---------- Render ---------- */
+function render() {
+  const host = document.getElementById("view");
+  const d = getData();
+  if (!d) { showLogin(); return; }
+  host.innerHTML = SCREENS[currentScreen].render();
+  document.getElementById("screenTitle").textContent = t(SCREENS[currentScreen].titleKey);
+  document.querySelectorAll(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.nav === currentScreen));
+  document.querySelectorAll("[data-screen]").forEach((m) => m.classList.toggle("active", m.dataset.screen === currentScreen));
+  host.scrollTop = 0;
+  if (currentScreen === "reminders") refreshNotifStatus();
+}
+function goto(screen) { if (!SCREENS[screen]) return; currentScreen = screen; closeMenu(); render(); }
+
+/* ---------- Wiring ---------- */
+function wireGlobal() {
+  // login
+  document.getElementById("login-btn").onclick = doLogin;
+  document.getElementById("in-pin").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+  document.getElementById("lgn-en").onclick = () => setLang("en");
+  document.getElementById("lgn-ml").onclick = () => setLang("ml");
+  // app language
+  document.getElementById("btn-en").onclick = () => setLang("en");
+  document.getElementById("btn-ml").onclick = () => setLang("ml");
+  // menu
+  document.getElementById("menu-btn").onclick = toggleMenu;
+  document.getElementById("menu-overlay").onclick = closeMenu;
+  document.getElementById("alarm-close").onclick = dismissAlarm;
+  document.getElementById("alarm-done").onclick = dismissAlarm;
+  document.getElementById("logout-btn").onclick = () => { logout(); closeMenu(); showLogin(); };
+  document.querySelectorAll("[data-nav]").forEach((n) => n.onclick = () => goto(n.dataset.nav));
+  document.querySelectorAll("[data-screen]").forEach((m) => m.onclick = () => goto(m.dataset.screen));
+  const view = document.getElementById("view");
+  view.addEventListener("click", onViewClick);
+}
+
+function onViewClick(e) {
+  const chip = e.target.closest(".chip");
+  if (chip) { chip.classList.toggle("on"); return; }
+  const btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  const actions = {
+    "mark-complete": markComplete,
+    "goto-followup": () => goto("followup"),
+    "goto-dashboard": () => goto("dashboard"),
+    "refill": () => refill(btn.dataset.id),
+    "google-review": googleReview,
+    "enable-notif": enableNotifications,
+    "share-ad": () => shareAd(btn.dataset.id),
+    "mood": () => logMood(btn.dataset.mood),
+  };
+  if (actions[btn.dataset.action]) { e.preventDefault(); actions[btn.dataset.action](); }
+}
+
+/* ---------- Daily mood ---------- */
+async function logMood(mood) {
+  if (!["love", "happy", "sad"].includes(mood)) return;
+  const creds = getCreds();
+  if (!creds || !creds.op || !creds.pin) { toast(t("moodRelogin")); return; }
+  setMoodToday(mood);   // optimistic: show it selected immediately
+  render();
+  try {
+    const res = await submitMood(creds.op, creds.pin, mood);
+    if (res && res.ok) toast(t("moodThanks"));
+    else toast(t("moodError"));
+  } catch (_) {
+    toast(t("moodError"));
+  }
+}
+
+/* ---------- Actions (patient) ---------- */
+function markComplete() {
+  const d = getData(); const total = d.treatment.durationDays;
+  const done = Math.min(d.progress.completedDays + 1, total);
+  update("progress", { completedDays: done });
+  toast(`${t("day")} ${done} ${t("of")} ${total} ✓`);
+  render();
+}
+function refill(id) {
+  const d = getData(); const m = d.medicines.find((x) => x.id === id);
+  toast(`${t("refillReorder")}: ${m ? m.name : ""} ✓`);
+}
+function googleReview() { window.open(CLINIC.googleReviewUrl, "_blank", "noopener"); }
+
+async function shareAd(id) {
+  const ad = getData().ads.find((a) => a.id === id); if (!ad) return;
+  const title = L(ad.title);
+  const text = `${title}\n${L(ad.body)}\n\n${L(CLINIC.name)}`;
+  const url = CLINIC.siteUrl;
+  try { if (navigator.share) { await navigator.share({ title, text, url }); return; } } catch (_) { return; }
+  try { await navigator.clipboard.writeText(`${text}\n${url}`); toast(t("linkCopied")); }
+  catch (_) { window.open(`https://wa.me/?text=${encodeURIComponent(text + "\n" + url)}`, "_blank", "noopener"); }
+}
+
+/* ---------- Notifications ---------- */
+async function enableNotifications() {
+  if (!("Notification" in window)) { toast(t("notifBlocked")); return; }
+  const perm = await Notification.requestPermission();
+  refreshNotifStatus();
+  if (perm === "granted") { new Notification(L(CLINIC.name), { body: t("notifOn"), icon: CLINIC.logo }); toast(t("notifOn")); }
+  else toast(t("notifBlocked"));
+}
+function refreshNotifStatus() {
+  const el = document.getElementById("notif-status"); if (!el) return;
+  const state = ("Notification" in window) ? Notification.permission : "unsupported";
+  el.textContent = state === "granted" ? "✅ " + t("notifOn") : state === "denied" ? "⚠️ " + t("notifBlocked") : "";
+}
+
+/* ---------- Menu ---------- */
+function toggleMenu() { document.getElementById("menu").classList.toggle("open"); document.getElementById("menu-overlay").classList.toggle("show"); }
+function closeMenu() { document.getElementById("menu").classList.remove("open"); document.getElementById("menu-overlay").classList.remove("show"); }
+
+/* ---------- SW + install ---------- */
+function registerSW() {
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  let deferred;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); deferred = e;
+    const b = document.getElementById("install-btn"); b.classList.remove("hidden");
+    b.onclick = async () => { b.classList.add("hidden"); deferred.prompt(); deferred = null; };
+  });
+}
+
+/* ---------- Reminder alarm (in-app, fires when the app is open) ---------- */
+const SHOWN_KEY = "ayusree.alarmshown";
+function loadShown() {
+  const today = new Date().toISOString().slice(0, 10);
+  try { const o = JSON.parse(localStorage.getItem(SHOWN_KEY) || "{}"); return o.date === today ? o : { date: today, ids: [] }; }
+  catch (_) { return { date: today, ids: [] }; }
+}
+function startReminders() { checkReminders(); setInterval(checkReminders, 30000); }
+function checkReminders() {
+  if (!isLoggedIn()) return;
+  const d = getData(); if (!d || !d.reminders) return;
+  const now = new Date();
+  const cur = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  const shown = loadShown();
+  for (const r of d.reminders) {
+    const rt = (r.time || "").slice(0, 5);
+    const key = rt + "|" + (r.label || "");
+    if (rt === cur && !shown.ids.includes(key)) {
+      shown.ids.push(key); localStorage.setItem(SHOWN_KEY, JSON.stringify(shown));
+      showAlarm(r); break;
+    }
+  }
+}
+function fmtTime(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(hhmm || ""); if (!m) return hhmm || "";
+  let h = +m[1]; const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12;
+  return `${h}:${m[2]} ${ap}`;
+}
+function showAlarm(r) {
+  document.getElementById("alarm-title").textContent = t("reminderAlarm");
+  document.getElementById("alarm-label").textContent = r.label || "";
+  document.getElementById("alarm-time").textContent = fmtTime(r.time);
+  document.getElementById("alarm-done").textContent = t("reminderDone");
+  document.getElementById("alarm").classList.remove("hidden");
+  playChime();
+}
+function dismissAlarm() { document.getElementById("alarm").classList.add("hidden"); }
+function playChime() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    const ctx = new AC();
+    [[659.25, 0], [783.99, 0.32], [987.77, 0.64]].forEach(([f, off]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+      const st = ctx.currentTime + off;
+      g.gain.setValueAtTime(0, st);
+      g.gain.linearRampToValueAtTime(0.16, st + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, st + 0.6);
+      o.start(st); o.stop(st + 0.65);
+    });
+  } catch (_) {}
+}
+
+boot();

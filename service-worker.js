@@ -1,1 +1,55 @@
-const CACHE="ayusree-v19",ASSETS=["./","./index.html","./manifest.json","./css/styles.css","./js/app.js","./js/i18n.js","./js/i18n.strings.js","./js/store.js","./js/screens.js","./js/components.js","./js/api.js","./config/clinic.config.js","./config/libraries.js","./config/supabase.config.js","./config/push.config.js","./assets/logo.svg","./assets/icons/icon-192.png","./assets/icons/icon-512.png"];self.addEventListener("install",i=>{i.waitUntil(caches.open(CACHE).then(t=>t.addAll(ASSETS)).then(()=>self.skipWaiting()))}),self.addEventListener("activate",i=>{i.waitUntil(caches.keys().then(t=>Promise.all(t.filter(e=>e!==CACHE).map(e=>caches.delete(e)))).then(()=>self.clients.claim()))}),self.addEventListener("fetch",i=>{if(i.request.method!=="GET")return;const t=new URL(i.request.url);t.origin===self.location.origin&&(t.pathname.includes("/admin")||i.respondWith(caches.match(i.request).then(e=>e||fetch(i.request).then(n=>{const a=n.clone();return caches.open(CACHE).then(s=>s.put(i.request,a)).catch(()=>{}),n}).catch(()=>e))))}),self.addEventListener("push",i=>{let t={};try{t=i.data?i.data.json():{}}catch{t={body:i.data?i.data.text():""}}const e=t.title||"Ayu:sree Reminder",n=t.body||"It is time for your medicine.",a={body:n,icon:"./assets/icons/icon-192.png",badge:"./assets/icons/icon-192.png",tag:t.reminderId?`reminder-${t.reminderId}`:"ayusree-reminder",renotify:!0,requireInteraction:!0,data:{url:t.url||"./?screen=reminders",title:e,body:n,label:t.label||"",time:t.time||""}};i.waitUntil(self.registration.showNotification(e,a))}),self.addEventListener("notificationclick",i=>{i.notification.close();const t=new URL(i.notification.data?.url||"./?screen=reminders",self.location.origin),e=i.notification.data?.body||i.notification.body||"";e&&t.searchParams.set("alarmText",e),i.notification.data?.label&&t.searchParams.set("alarmLabel",i.notification.data.label),i.notification.data?.time&&t.searchParams.set("alarmTime",i.notification.data.time);const n=t.origin===self.location.origin?t.href:new URL("./?screen=reminders",self.location.origin).href;i.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:!0}).then(a=>{for(const s of a)if(new URL(s.url).origin===self.location.origin)return s.navigate(n),s.focus();return self.clients.openWindow(n)}))});
+/* Service worker — offline-friendly app shell caching.
+ * Bump CACHE version whenever you change cached files. */
+const CACHE = "ayusree-v11";
+
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./css/styles.css",
+  "./js/app.js",
+  "./js/i18n.js",
+  "./js/i18n.strings.js",
+  "./js/store.js",
+  "./js/screens.js",
+  "./js/components.js",
+  "./js/api.js",
+  "./config/clinic.config.js",
+  "./config/libraries.js",
+  "./config/supabase.config.js",
+  "./assets/logo.svg",
+  "./assets/icons/icon-192.png",
+  "./assets/icons/icon-512.png",
+];
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+/* Cache-first for app shell, network fallback; runtime-cache new GETs.
+ * Only same-origin GETs are handled — never cache the Supabase API
+ * (cross-origin) or the admin console (always fresh). */
+self.addEventListener("fetch", (e) => {
+  if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;      // skip Supabase & CDNs
+  if (url.pathname.includes("/admin")) return;          // admin always from network
+  e.respondWith(
+    caches.match(e.request).then((cached) =>
+      cached ||
+      fetch(e.request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return res;
+      }).catch(() => cached)
+    )
+  );
+});
