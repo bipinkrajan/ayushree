@@ -262,6 +262,14 @@ function adviceChips(name, kind, selected) {
     `<button type="button" class="chip ${(selected || []).includes(l.label) ? "on" : ""}" data-id="${esc(l.label)}">${esc(l.label)}</button>`).join("")}</div>`
     + `<button type="button" class="btn sm light" data-act="add-list" data-kind="${kind}" style="margin-top:6px">＋ Add advice</button>`;
 }
+/* treatment chips — multi-select, backed by the editable "treatment" list.
+ * The ＋ button adds a new treatment type to the library (and auto-selects it). */
+function treatChips(name, kind, selected) {
+  const items = S.lists[kind] || [];
+  return `<div class="chips" data-chips="${name}" data-listkind="${kind}">${items.map((l) =>
+    `<button type="button" class="chip ${(selected || []).includes(l.label) ? "on" : ""}" data-id="${esc(l.label)}">${esc(l.label)}</button>`).join("")}</div>`
+    + `<button type="button" class="btn sm light" data-act="add-list" data-kind="${kind}" style="margin-top:6px">＋ Add treatment</button>`;
+}
 function renderPatient() {
   const c = S.current, p = c.patient, v = c.visit, d = c.diagnosis, tr = c.treatment, f = c.followup;
   const opts = (arr, val, key = "en") => arr.map((x) => `<option ${((x[key]) === val) ? "selected" : ""}>${esc(x[key])}</option>`).join("");
@@ -308,9 +316,9 @@ function patientBody(v, d, tr, f) {
     </div>
 
     <div class="card"><h3>Treatment plan</h3>
+      <div class="field"><label>Treatments (select one or more)</label>${treatChips("tr_names", "treatment", (tr.name || "").split(/\s*,\s*/).filter(Boolean))}</div>
       <div class="row2">
         <div class="field"><label>Suggested by (doctor / therapist)</label>${listSel("tr_by", "doctor", tr.by_doctor)}</div>
-        <div class="field"><label>Treatment</label>${listSel("tr_name", "treatment", tr.name)}</div>
         <div class="field"><label>Duration (days)</label><input data-f="tr_days" type="number" value="${esc(tr.duration_days || 30)}"></div>
       </div>
       <div class="field"><label>Therapy instructions</label><textarea data-f="tr_instr">${esc(tr.instructions || "")}</textarea></div>
@@ -446,7 +454,8 @@ async function saveDiagnosis() {
 }
 async function saveTreatment() {
   const f = fields();
-  await rest("POST", "treatments", { body: { patient_id: S.current.patient.id, by_doctor: f.tr_by, name: f.tr_name, duration_days: Number(f.tr_days) || 30, instructions: f.tr_instr, advice_do: f.advice_do || [], advice_dont: f.advice_dont || [] } });
+  const trName = (f.tr_names || []).join(", ");
+  await rest("POST", "treatments", { body: { patient_id: S.current.patient.id, by_doctor: f.tr_by, name: trName, duration_days: Number(f.tr_days) || 30, instructions: f.tr_instr, advice_do: f.advice_do || [], advice_dont: f.advice_dont || [] } });
   toast("Saved"); await openPatient(S.current.patient.id);
 }
 async function addMedicine() {
